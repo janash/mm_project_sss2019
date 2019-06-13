@@ -119,9 +119,9 @@ def restore_system(coordinates, i_particle, old_position):
 
     return coordinates
 
-def adjust_displacement(i_step, n_trials, n_accept, max_displacement):
+def adjust_displacement(freq, i_step, n_trials, n_accept, max_displacement):
 
-    if np.mod(i_step + 1,1000) == 0:
+    if np.mod(i_step + 1, freq) == 0:
         acc_rate = float(n_accept) / float(n_trials)
         if (acc_rate < 0.380):
             max_displacement *= 0.8
@@ -140,12 +140,14 @@ reduced_temperature = 0.9
 num_particles = 100
 max_displacement = 0.1
 n_steps = 50000
+freq = 1000
 tune_displacement = True
 
 # -------------------------
 # Simulation initialization
 # -------------------------
 
+element = 'C'
 beta = 1 / reduced_temperature
 box_length = np.cbrt(num_particles / reduced_density)
 cutoff = box_length / 2.0
@@ -175,12 +177,12 @@ for i_step in range(0, n_steps):
         coordinates = restore_system(coordinates, i_particle, old_position)
 
     if tune_displacement:
-        max_displacement = adjust_displacement(i_step, n_trials, n_accept, max_displacement)
+        max_displacement = adjust_displacement(freq, i_step, n_trials, n_accept, max_displacement)
 
     total_energy = (total_pair_energy + tail_correction) / num_particles
 
     energy_array[i_step] = total_energy
 
-    if np.mod(i_step + 1, 1000) == 0:
+    if np.mod(i_step + 1, freq) == 0:
 
         print (i_step + 1, total_energy)
