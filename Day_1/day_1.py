@@ -81,6 +81,7 @@ def get_molecule_energy(coordinates, i_particle):
 
     return e_total
 
+
 def move_particle(num_particles, max_displacement, coordinates):
 
     i_particle = np.random.randint(num_particles)
@@ -131,6 +132,15 @@ def adjust_displacement(freq, i_step, n_trials, n_accept, max_displacement):
         n_accept = 0
     return max_displacement
 
+def update_output_files(traj, i_step, freq, element, num_particles, coordinates):
+
+    if np.mod(i_step + 1, freq) == 0:
+
+        traj.write(str(num_particles) + '\n\n')
+        for i_particle in range(num_particles):
+            traj.write("%s %10.5f %10.5f %10.5f \n" % (element, coordinates[i_particle][0], coordinates[i_particle][1], coordinates[i_particle][2]))
+
+
 # ---------------
 # Parameter setup
 # ---------------
@@ -158,6 +168,7 @@ energy_array = np.zeros(n_steps)
 coordinates = generate_initial_state(num_particles, box_length, method='random')
 total_pair_energy = total_potential_energy(coordinates, box_length)
 tail_correction = tail_correction(box_length)
+traj = open('traj.xyz', 'w') 
 
 # --------------------------------
 # Metropolis Monte Carlo algorithm
@@ -183,6 +194,6 @@ for i_step in range(0, n_steps):
 
     energy_array[i_step] = total_energy
 
-    if np.mod(i_step + 1, freq) == 0:
+    update_output_files(traj, i_step, freq, element, num_particles, coordinates)
 
-        print (i_step + 1, total_energy)
+traj.close()
