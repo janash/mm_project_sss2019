@@ -5,25 +5,11 @@ from mpl_toolkits.mplot3d import Axes3D
 
 # Generate initial state
 
-def generate_initial_state(num_particles, box_length, method='lattice'):
+def generate_initial_state(num_particles, box_length, method='random'):
 
     if method is 'random':
         # Randomly placing particles in a box
         coordinates = (0.5 - np.random.rand(num_particles, 3)) * box_length
-        
-    elif method is 'lattice':
-        # Adding particles in a lattice. There might be many more
-        # ways to do this!
-        spacing = int(np.cbrt(num_particles) + 1)
-        x_vector = np.linspace(0.0, box_length, spacing)
-        y_vector = np.linspace(0.0, box_length, spacing)
-        z_vector = np.linspace(0.0, box_length, spacing)
-        grid  = np.meshgrid(x_vector, y_vector, z_vector)
-        stack = np.vstack(grid)
-        coordinates = stack.reshape(3, -1).T
-        excess = len(coordinates) - num_particles
-        coordinates = coordinates[:-excess]
-        coordinates *= 0.95
         
     elif method is 'file':
         # Reading a reference configuration from NIST
@@ -167,7 +153,7 @@ cutoff2 = np.power(cutoff, 2)
 n_trials = 0
 n_accept = 0
 energy_array = np.zeros(n_steps)
-coordinates = generate_initial_state(num_particles, box_length, method='lattice')
+coordinates = generate_initial_state(num_particles, box_length, method='random')
 total_pair_energy = total_potential_energy(coordinates, box_length)
 tail_correction = tail_correction(box_length)
 
