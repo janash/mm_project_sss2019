@@ -134,6 +134,26 @@ class Box:
     def restore_system(self, i_particle, old_position):
         self.particles[i_particle].coordinates = old_position
 
+class OrthorhombicBox(Box):
+
+    def __init__(self, width, *args, **kwargs):
+        self.width = width
+        super().__init__(*args, **kwargs)
+
+    def move_particle(self, max_displacement):
+        """Override parent"""
+        pass
+
+class TriclinicBox(Box):
+
+    def __init__(self, width, angle, *args, **kwargs):
+        self.width = width
+        self.angle = angle
+        super().__init__(*args, **kwargs)
+
+    def move_particle(self, max_displacement):
+        """Override parent"""
+        pass
 
 # --------------------------------------------------------------------------
 
