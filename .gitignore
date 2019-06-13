@@ -105,3 +105,6 @@ venv.bak/
 
 # SSS2019 files
 *.xyz
+
+# Pycharm
+.idea/
