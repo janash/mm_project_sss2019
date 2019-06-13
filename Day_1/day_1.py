@@ -40,8 +40,8 @@ def total_potential_energy(coordinates, box_length):
 
     e_total = 0.0
 
-    for i_particle in range(0, num_particles):
-        for j_particle in range(0, i_particle):
+    for i_particle in range(num_particles):
+        for j_particle in range(i_particle):
 
             r_i = coordinates[i_particle]
             r_j = coordinates[j_particle]
@@ -69,7 +69,7 @@ def get_molecule_energy(coordinates, i_particle):
     e_total = 0.0
     i_position = coordinates[i_particle]
 
-    for j_particle in range(0, num_particles):
+    for j_particle in range(num_particles):
         if i_particle != j_particle:
 
             j_position = coordinates[j_particle]
@@ -93,7 +93,7 @@ def move_particle(num_particles, max_displacement, coordinates):
 
     return new_energy - old_energy, i_particle, old_position, coordinates
 
-def accept_or_reject(delta_e, reduced_temperature):
+def accept_or_reject(delta_e, beta):
 
     if delta_e <= 0.0:
         accept = True
@@ -106,13 +106,6 @@ def accept_or_reject(delta_e, reduced_temperature):
             accept = False
 
     return accept
-
-def update_system(n_accept, delta_e, total_pair_energy):
-
-    n_accept += 1
-    total_pair_energy += delta_e
-
-    return n_accept, total_pair_energy
 
 def restore_system(coordinates, i_particle, old_position):
 
@@ -132,7 +125,7 @@ def adjust_displacement(freq, i_step, n_trials, n_accept, max_displacement):
         n_accept = 0
     return max_displacement
 
-def update_output_files(traj, i_step, freq, element, num_particles, coordinates):
+def update_output_file(traj, i_step, freq, element, num_particles, coordinates):
 
     if np.mod(i_step + 1, freq) == 0:
 
@@ -174,16 +167,17 @@ traj = open('traj.xyz', 'w')
 # Metropolis Monte Carlo algorithm
 # --------------------------------
 
-for i_step in range(0, n_steps):
+for i_step in range(n_steps):
 
     n_trials += 1
 
     delta_e, i_particle, old_position, coordinates = move_particle(num_particles, max_displacement, coordinates)
 
-    accept = accept_or_reject(delta_e, reduced_temperature)
+    accept = accept_or_reject(delta_e, beta)
 
     if accept:
-        n_accept, total_pair_energy = update_system(n_accept, delta_e, total_pair_energy)
+        total_pair_energy += delta_e
+        n_accept += 1
     else:
         coordinates = restore_system(coordinates, i_particle, old_position)
 
@@ -194,6 +188,9 @@ for i_step in range(0, n_steps):
 
     energy_array[i_step] = total_energy
 
-    update_output_files(traj, i_step, freq, element, num_particles, coordinates)
+    update_output_file(traj, i_step, freq, element, num_particles, coordinates)
+
+    if np.mod(i_step + 1, 1000) == 0:
+        print (i_step + 1, energy_array[i_step])
 
 traj.close()
