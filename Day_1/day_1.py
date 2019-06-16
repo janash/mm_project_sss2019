@@ -6,9 +6,13 @@ from mpl_toolkits.mplot3d import Axes3D
 
 # Generate initial state
 
-def generate_initial_state(num_particles, box_length, method='random', fname=None):
+def generate_initial_state(method='random', fname=None, num_particles=None, box_length=None):
 
     if method is 'random':
+        if num_particles is None:
+            raise ValueError('generate_initial_state - "random" particle placement chosen, please input the number of particles using the num_particles argument.')
+        if box_length is None:
+            raise ValueError('generate_initial_state - "random" particle placement chosen, please input the box length using the box_length argument.')
         # Randomly placing particles in a box
         coordinates = (0.5 - np.random.rand(num_particles, 3)) * box_length
     
@@ -151,29 +155,45 @@ def update_output_file(traj, i_step, freq, element, num_particles, coordinates):
 
 reduced_density = 0.9
 reduced_temperature = 0.9
-num_particles = 100
 max_displacement = 0.1
 n_steps = 50000
 freq = 1000
 tune_displacement = True
 
+beta = 1 / reduced_temperature
+
 # -------------------------
 # Simulation initialization
 # -------------------------
 
-file_name = os.path.join('..', 'nist_sample_config1.txt')
-
+# Coordinate initialization
+method = 'file'
 element = 'C'
-beta = 1 / reduced_temperature
-box_length = np.cbrt(num_particles / reduced_density)
+
+if method == 'random':
+    num_particles = 100
+    box_length = np.cbrt(num_particles / reduced_density)
+    coordintes = generate_initial_state(method=method, num_particles=num_particles, box_length=box_length)
+else:
+    file_name = os.path.join('..', 'nist_sample_config1.txt')
+    coordinates = generate_initial_state(method=method, fname=file_name)
+    num_particles = len(coordinates)
+    with open(file_name) as f:
+        f.readline()
+        box_length = float(f.readline().split()[0])
+
 cutoff = box_length / 2.0
 cutoff2 = np.power(cutoff, 2)
 n_trials = 0
 n_accept = 0
 energy_array = np.zeros(n_steps)
-coordinates = generate_initial_state(num_particles, box_length, method='file', fname=file_name)
+coordinates = generate_initial_state(method=method, fname=file_name)
+
+
 total_pair_energy = total_potential_energy(coordinates, box_length)
 tail_correction = tail_correction(box_length)
+print(total_pair_energy)
+
 traj = open('traj.xyz', 'w') 
 
 # --------------------------------
