@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -5,15 +6,25 @@ from mpl_toolkits.mplot3d import Axes3D
 
 # Generate initial state
 
-def generate_initial_state(num_particles, box_length, method='random'):
+def generate_initial_state(num_particles, box_length, method='random', fname=None):
 
     if method is 'random':
         # Randomly placing particles in a box
         coordinates = (0.5 - np.random.rand(num_particles, 3)) * box_length
-        
+    
     elif method is 'file':
-        # Reading a reference configuration from NIST
-        coordinates = np.loadtxt("lj_sample_config_periodic1.txt", skiprows=2, usecols=(1,2,3))
+        try:
+            # Reading a reference configuration from NIST
+            coordinates = np.loadtxt(fname, skiprows=2, usecols=(1,2,3))
+        except ValueError:
+            if fname is None:
+                raise ValueError("generate_initial_state: Method set to 'file', but no filepath given. Please specify an input file")
+            else:
+                raise ValueError
+        except OSError:
+            raise OSError(F'File {fname} not found.')
+        except:
+            raise TypeError(F'Could not read file {fname} - incompatible file format for input coordinates.')
     
     return coordinates
 
@@ -150,6 +161,8 @@ tune_displacement = True
 # Simulation initialization
 # -------------------------
 
+file_name = os.path.join('..', 'nist_sample_config1.txt')
+
 element = 'C'
 beta = 1 / reduced_temperature
 box_length = np.cbrt(num_particles / reduced_density)
@@ -158,7 +171,7 @@ cutoff2 = np.power(cutoff, 2)
 n_trials = 0
 n_accept = 0
 energy_array = np.zeros(n_steps)
-coordinates = generate_initial_state(num_particles, box_length, method='random')
+coordinates = generate_initial_state(num_particles, box_length, method='file', fname=file_name)
 total_pair_energy = total_potential_energy(coordinates, box_length)
 tail_correction = tail_correction(box_length)
 traj = open('traj.xyz', 'w') 
