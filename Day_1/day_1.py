@@ -6,20 +6,6 @@ from mpl_toolkits.mplot3d import Axes3D
 
 # Generate initial state
 
-def generate_initial_state_2(method, **kwargs):
-
-    if method == "random":
-        # Generate state based on inputs
-        num_particles = kwargs['num_particles']
-        box_length = kwargs['box_length']
-        coordinates = (0.5 - np.random.rand(num_particles, 3)) * box_length
-    else:
-        # Else, method is file.
-        fname = kwargs['fname']
-        coordinates = np.loadtxt(fname, skiprows=2, usecols=(1,2,3))
-    return coordinates
-            
-
 def generate_initial_state(method='random', fname=None, num_particles=None, box_length=None):
 
     if method is 'random':
