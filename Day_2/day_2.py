@@ -43,6 +43,7 @@ Students will work with their teams on a common repository (MM_teamXX_2019) to f
 # Generate initial state
 
 def generate_initial_state_2(method, **kwargs):
+
     if method != "random" and method != "file":
         raise ValueError(F'Unknown method {method} specified. Options are "random" or "file"')
     
