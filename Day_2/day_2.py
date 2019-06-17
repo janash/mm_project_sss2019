@@ -4,6 +4,42 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 #%matplotlib notebook
 
+"""
+This is the sample code for Day 2 of the software summer school MM project.
+
+Day 2 covers
+- PEP 8
+- Numpy style docstrings
+- Error and Exception handling
+- testing using pytest
+
+Student milestones:
+Students will work with their teams on a common repository (MM_teamXX_2019) to fulfill the following milestones. Changes to the repo should be done using a Fork/PR model, where every change must be reviewed by one other person before merging.
+1. Write numpy style docstrings for each function
+    - generate_initial_state
+    - lennard_jones_potential
+    - minimum_image_distance
+    - total_potential_energy
+    - tail_correction
+    - get_molecule_energy
+    - move_particle
+    - accept_or_reject
+1. Use a linter to make sure your code adheres to PEP8 guidelines (yapf).
+1. Add error handling to your functions.
+    - For example, in the function `generate_initial_state`, your function should check that input parameters are compatible for each method.
+        - if the method is "random", expected inputs are `num_particles` and `box_size`. Having additional or missing arguments should cause a TypeError.
+        - if the method is "file", expected inputs are `fname`. Having additional or missing arguments should cause a TypeError.
+        - You should check that the method is either "random" or "file". If not either of these, raise a ValueError.
+        - use a `try except` clause to open the file for `method=file`
+    *Instructor note* - you could walk them through writing this error checking - probably the most complicated of any function.
+1. Make sure that each function has at least one unit test. Name the test file `test_mc.py`
+    - create a fixture which returns a system - coordinates, atom names, box length.
+    - Use @pytest.mark.parametrize to test the function `lennard_jones_potential` for a range of distances.
+    - Identify one other function where you could use `parametrize` and write a test.
+1. Test errors and exceptions 
+
+"""
+
 # Generate initial state
 
 def generate_initial_state_2(method, **kwargs):
