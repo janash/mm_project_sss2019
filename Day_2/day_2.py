@@ -7,7 +7,28 @@ from mpl_toolkits.mplot3d import Axes3D
 # Generate initial state
 
 def generate_initial_state_2(method, **kwargs):
+    if method != "random" and method != "file":
+        raise ValueError(F'Unknown method {method} specified. Options are "random" or "file"')
+    
+    # Check inputs - this dictionary gives expected kwargs for each method.
+    expected_kwargs = {
+        "random": ['num_particles', 'box_length'],
+        "file": ["fname"],
+    }
+    
+    expected_keys = expected_kwargs[method]
+    input_keys = list(kwargs.keys())
+    
+    ## Check that we only have expected arguments in kwargs
+    list_diff = np.setdiff1d(input_keys, expected_keys)
+    if list_diff:
+        raise TypeError(F'Arguments {list_diff} not recognized for method="{method}"". Valid inputs are {expected_keys}')
 
+    ## Check that we have all expected  arguments in kwargs
+    list_diff = np.setdiff1d(expected_keys, input_keys)
+    if list_diff:
+        raise TypeError(F'Missing argument {list_diff} for input method {method}.')
+    
     if method == "random":
         # Generate state based on inputs
         num_particles = kwargs['num_particles']
@@ -16,18 +37,45 @@ def generate_initial_state_2(method, **kwargs):
     else:
         # Else, method is file.
         fname = kwargs['fname']
-        coordinates = np.loadtxt(fname, skiprows=2, usecols=(1,2,3))
+        # Try reading the file
+        try:
+            # Reading a reference configuration from NIST
+            coordinates = np.loadtxt(fname, skiprows=2, usecols=(1,2,3))
+        except OSError:
+            raise OSError(F'File {fname} not found.')
+        except Exception as e:
+            print(e)
+            raise
     return coordinates
             
 
 def generate_initial_state(method='random', fname=None, num_particles=None, box_length=None):
 
     if method is 'random':
+        if num_particles is None:
+            raise ValueError('generate_initial_state - "random" particle placement chosen, please input the number of particles using the num_particles argument.')
+        if box_length is None:
+            raise ValueError('generate_initial_state - "random" particle placement chosen, please input the box length using the box_length argument.')
+        # Randomly placing particles in a box
         coordinates = (0.5 - np.random.rand(num_particles, 3)) * box_length
     
     elif method is 'file':
-        coordinates = np.loadtxt(fname, skiprows=2, usecols=(1,2,3))
+        try:
+            # Reading a reference configuration from NIST
+            coordinates = np.loadtxt(fname, skiprows=2, usecols=(1,2,3))
+        except ValueError:
+            if fname is None:
+                raise ValueError("generate_initial_state: Method set to 'file', but no filepath given. Please specify an input file")
+            else:
+                raise ValueError
+        except OSError:
+            raise OSError(F'File {fname} not found.')
+        except Exception as e:
+            print(e)
+            raise
+    
     return coordinates
+    
 
 # Lennard Jones potential implementation
 
