@@ -37,8 +37,9 @@ def minimum_image_distance(r_i, r_j, box_length):
 def total_potential_energy(coordinates, box_length):
 
     e_total = 0.0
+    particle_count = len(coordinates)
 
-    for i_particle in range(num_particles):
+    for i_particle in range(particle_count):
         for j_particle in range(i_particle):
             r_i = coordinates[i_particle]
             r_j = coordinates[j_particle]
@@ -51,7 +52,7 @@ def total_potential_energy(coordinates, box_length):
 
 # Computation of the energy tail correction
 
-def tail_correction(box_length):
+def tail_correction(box_length, cutoff):
 
     volume = np.power(box_length, 3)
     sig_by_cutoff3 = np.power(1.0 / cutoff, 3)
@@ -61,12 +62,15 @@ def tail_correction(box_length):
 
     return e_correction
 
-def get_molecule_energy(coordinates, i_particle):
+def get_molecule_energy(coordinates, i_particle, cutoff):
 
     e_total = 0.0
     i_position = coordinates[i_particle]
 
-    for j_particle in range(num_particles):
+    cutoff2 = cutoff ** 2
+    particle_count = len(coordinates)
+
+    for j_particle in range(coordinates):
         if i_particle != j_particle:
 
             j_position = coordinates[j_particle]
