@@ -4,11 +4,14 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 #%matplotlib notebook
 
+
 """
 This is the sample code for Day 2 of the software summer school MM project.
 
 Day 2 covers
 - PEP 8
+    - make point that all languages have recommended style and formatting.
+    - C++ style and formatting - how will this be covered?
 - Numpy style docstrings
 - Error and Exception handling
 - testing using pytest
@@ -42,81 +45,49 @@ Students will work with their teams on a common repository (MM_teamXX_2019) to f
 
 # Generate initial state
 
-def generate_initial_state_2(method, **kwargs):
-
-    if method != "random" and method != "file":
-        raise ValueError(F'Unknown method {method} specified. Options are "random" or "file"')
-    
-    # Check inputs - this dictionary gives expected kwargs for each method.
-    expected_kwargs = {
-        "random": ['num_particles', 'box_length'],
-        "file": ["fname"],
-    }
-    
-    expected_keys = expected_kwargs[method]
-    input_keys = list(kwargs.keys())
-    
-    ## Check that we only have expected arguments in kwargs
-    list_diff = np.setdiff1d(input_keys, expected_keys)
-    if list_diff:
-        raise TypeError(F'Arguments {list_diff} not recognized for method="{method}"". Valid inputs are {expected_keys}')
-
-    ## Check that we have all expected  arguments in kwargs
-    list_diff = np.setdiff1d(expected_keys, input_keys)
-    if list_diff:
-        raise TypeError(F'Missing argument {list_diff} for input method {method}.')
-    
-    if method == "random":
-        # Generate state based on inputs
-        num_particles = kwargs['num_particles']
-        box_length = kwargs['box_length']
-        coordinates = (0.5 - np.random.rand(num_particles, 3)) * box_length
-    else:
-        # Else, method is file.
-        fname = kwargs['fname']
-        # Try reading the file
-        try:
-            # Reading a reference configuration from NIST
-            coordinates = np.loadtxt(fname, skiprows=2, usecols=(1,2,3))
-        except OSError:
-            raise OSError(F'File {fname} not found.')
-        except Exception as e:
-            print(e)
-            raise
-    return coordinates
-            
-
 def generate_initial_state(method='random', fname=None, num_particles=None, box_length=None):
+    """
+    Generate initial coordinates for MC system.
 
+    Parameters
+    ----------
+    method : str
+        Method for creating initial configuration. Valid options are 'random' or 'file'. 'random' will place particles in the simulation box randomly, depending on the num_particles argument, while 'file' will read coordinates from an xyz file.
+    fname : str
+        File path of file to read coordinates from (for `method='file'`).
+    num_particles : int
+        Number of particles to place in box (for `method='random'`)
+    box_length : float
+        Length of the simulation box (for `method='file'`)
+
+    Returns
+    -------
+    coordinates : numpy array
+        Array of coordinates (x, y, z)
+    """
     if method is 'random':
-        if num_particles is None:
-            raise ValueError('generate_initial_state - "random" particle placement chosen, please input the number of particles using the num_particles argument.')
-        if box_length is None:
-            raise ValueError('generate_initial_state - "random" particle placement chosen, please input the box length using the box_length argument.')
-        # Randomly placing particles in a box
         coordinates = (0.5 - np.random.rand(num_particles, 3)) * box_length
     
     elif method is 'file':
-        try:
-            # Reading a reference configuration from NIST
-            coordinates = np.loadtxt(fname, skiprows=2, usecols=(1,2,3))
-        except ValueError:
-            if fname is None:
-                raise ValueError("generate_initial_state: Method set to 'file', but no filepath given. Please specify an input file")
-            else:
-                raise ValueError
-        except OSError:
-            raise OSError(F'File {fname} not found.')
-        except Exception as e:
-            print(e)
-            raise
-    
+        coordinates = np.loadtxt(fname, skiprows=2, usecols=(1,2,3))
     return coordinates
-    
 
 # Lennard Jones potential implementation
 
 def lennard_jones_potential(rij2):
+    """
+    Calculate the Lennard Jones pairwise potential between two particles based on a separation distance.
+    
+    Parameters
+    ----------
+    rij2 : float
+        The squared distance between two particles.
+    
+    Returns
+    -------
+    float
+        The Lennard Jones interaction energy for two particles.
+    """
 
     sig_by_r6 = np.power(1 / rij2, 3)
     sig_by_r12 = np.power(sig_by_r6, 2)
@@ -125,6 +96,25 @@ def lennard_jones_potential(rij2):
 # Minimum image distance implementation
 
 def minimum_image_distance(r_i, r_j, box_length):
+    """
+    Calculate the distance between two particles using the minimum image convention.
+
+    The minimum image convention is for calculating distances in boxes with periodic boundary conditions.
+
+    Parameters
+    ----------
+    r_i : numpy array
+        The coordinates of atom i np.array(x,y,z) 
+    r_j : numpy array
+        The coordinates of atom j np.array(x,y,z)
+    box_length: float
+        Length of simulation box
+    
+    Returns
+    -------
+    rij2 : float
+        The square distance between two particles.
+    """
 
     rij = r_i - r_j
     rij = rij - box_length * np.round(rij / box_length)
@@ -133,11 +123,28 @@ def minimum_image_distance(r_i, r_j, box_length):
 
 # Computation of the total system energy
 
-def total_potential_energy(coordinates, box_length):
+def total_potential_energy(coordinates, box_length, cutoff):
+    """
+    Calculate the total potential energy of the system using a pairwise Lennard Jones potential.
+
+    Parameters
+    ----------
+    coordinates: numpy array
+        The coordinates of all particles in the system. 
+    box_length: float
+        Length of simulation box
+    
+    Returns
+    -------
+    e_total : float
+        The total pairwise potential energy of the system.
+    """
 
     e_total = 0.0
+    particle_count = len(coordinates)
+    cutoff2 = cutoff ** 2
 
-    for i_particle in range(num_particles):
+    for i_particle in range(particle_count):
         for j_particle in range(i_particle):
             r_i = coordinates[i_particle]
             r_j = coordinates[j_particle]
@@ -150,7 +157,10 @@ def total_potential_energy(coordinates, box_length):
 
 # Computation of the energy tail correction
 
-def tail_correction(box_length):
+def tail_correction(box_length, cutoff):
+    """
+
+    """
 
     volume = np.power(box_length, 3)
     sig_by_cutoff3 = np.power(1.0 / cutoff, 3)
@@ -160,12 +170,15 @@ def tail_correction(box_length):
 
     return e_correction
 
-def get_molecule_energy(coordinates, i_particle):
+def get_molecule_energy(coordinates, i_particle, cutoff):
 
     e_total = 0.0
     i_position = coordinates[i_particle]
 
-    for j_particle in range(num_particles):
+    cutoff2 = cutoff ** 2
+    particle_count = len(coordinates)
+
+    for j_particle in range(particle_count):
         if i_particle != j_particle:
 
             j_position = coordinates[j_particle]
@@ -178,14 +191,14 @@ def get_molecule_energy(coordinates, i_particle):
     return e_total
 
 
-def move_particle(num_particles, max_displacement, coordinates):
+def move_particle(num_particles, max_displacement, coordinates, cutoff):
 
     i_particle = np.random.randint(num_particles)
     random_displacement = (2.0 * np.random.rand(3) - 1.0)* max_displacement
     old_position = coordinates[i_particle].copy()
-    old_energy = get_molecule_energy(coordinates, i_particle)
+    old_energy = get_molecule_energy(coordinates, i_particle, cutoff)
     coordinates[i_particle] += random_displacement
-    new_energy = get_molecule_energy(coordinates, i_particle)
+    new_energy = get_molecule_energy(coordinates, i_particle, cutoff)
 
     return new_energy - old_energy, i_particle, old_position, coordinates
 
@@ -255,23 +268,23 @@ if __name__ == "__main__":
     if method == 'random':
         num_particles = 100
         box_length = np.cbrt(num_particles / reduced_density)
-        coordintes = generate_initial_state_2(method=method, num_particles=num_particles, box_length=box_length)
+        coordintes = generate_initial_state(method=method, num_particles=num_particles, box_length=box_length)
     else:
         file_name = os.path.join('..', 'nist_sample_config1.txt')
-        coordinates = generate_initial_state_2(method=method, fname=file_name)
+        coordinates = generate_initial_state(method=method, fname=file_name)
         num_particles = len(coordinates)
         with open(file_name) as f:
             f.readline()
             box_length = float(f.readline().split()[0])
 
-    cutoff = 3.0
-    cutoff2 = np.power(cutoff, 2)
+    simulation_cutoff = 3.0
+    simulation_cutoff2 = np.power(simulation_cutoff, 2)
     n_trials = 0
     n_accept = 0
     energy_array = np.zeros(n_steps)
 
-    total_pair_energy = total_potential_energy(coordinates, box_length)
-    tail_correction = tail_correction(box_length)
+    total_pair_energy = total_potential_energy(coordinates, box_length, simulation_cutoff)
+    tail_correction = tail_correction(box_length, simulation_cutoff)
     print(total_pair_energy)
 
     traj = open('traj.xyz', 'w') 
@@ -284,7 +297,7 @@ if __name__ == "__main__":
 
         n_trials += 1
 
-        delta_e, i_particle, old_position, coordinates = move_particle(num_particles, max_displacement, coordinates)
+        delta_e, i_particle, old_position, coordinates = move_particle(num_particles, max_displacement, coordinates, simulation_cutoff)
 
         accept = accept_or_reject(delta_e, beta)
 
