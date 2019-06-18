@@ -34,10 +34,11 @@ def minimum_image_distance(r_i, r_j, box_length):
 
 # Computation of the total system energy
 
-def total_potential_energy(coordinates, box_length):
+def total_potential_energy(coordinates, box_length, cutoff):
 
     e_total = 0.0
     particle_count = len(coordinates)
+    cutoff2 = cutoff ** 2
 
     for i_particle in range(particle_count):
         for j_particle in range(i_particle):
@@ -70,7 +71,7 @@ def get_molecule_energy(coordinates, i_particle, cutoff):
     cutoff2 = cutoff ** 2
     particle_count = len(coordinates)
 
-    for j_particle in range(coordinates):
+    for j_particle in range(particle_count):
         if i_particle != j_particle:
 
             j_position = coordinates[j_particle]
@@ -83,14 +84,14 @@ def get_molecule_energy(coordinates, i_particle, cutoff):
     return e_total
 
 
-def move_particle(num_particles, max_displacement, coordinates):
+def move_particle(num_particles, max_displacement, coordinates, cutoff):
 
     i_particle = np.random.randint(num_particles)
     random_displacement = (2.0 * np.random.rand(3) - 1.0)* max_displacement
     old_position = coordinates[i_particle].copy()
-    old_energy = get_molecule_energy(coordinates, i_particle)
+    old_energy = get_molecule_energy(coordinates, i_particle, cutoff)
     coordinates[i_particle] += random_displacement
-    new_energy = get_molecule_energy(coordinates, i_particle)
+    new_energy = get_molecule_energy(coordinates, i_particle, cutoff)
 
     return new_energy - old_energy, i_particle, old_position, coordinates
 
@@ -160,23 +161,23 @@ if __name__ == "__main__":
     if method == 'random':
         num_particles = 100
         box_length = np.cbrt(num_particles / reduced_density)
-        coordintes = generate_initial_state_2(method=method, num_particles=num_particles, box_length=box_length)
+        coordintes = generate_initial_state(method=method, num_particles=num_particles, box_length=box_length)
     else:
         file_name = os.path.join('..', 'nist_sample_config1.txt')
-        coordinates = generate_initial_state_2(method=method, fname=file_name)
+        coordinates = generate_initial_state(method=method, fname=file_name)
         num_particles = len(coordinates)
         with open(file_name) as f:
             f.readline()
             box_length = float(f.readline().split()[0])
 
-    cutoff = 3.0
-    cutoff2 = np.power(cutoff, 2)
+    simulation_cutoff = 3.0
+    simulation_cutoff2 = np.power(simulation_cutoff, 2)
     n_trials = 0
     n_accept = 0
     energy_array = np.zeros(n_steps)
 
-    total_pair_energy = total_potential_energy(coordinates, box_length)
-    tail_correction = tail_correction(box_length)
+    total_pair_energy = total_potential_energy(coordinates, box_length, simulation_cutoff)
+    tail_correction = tail_correction(box_length, simulation_cutoff)
     print(total_pair_energy)
 
     traj = open('traj.xyz', 'w') 
@@ -189,7 +190,7 @@ if __name__ == "__main__":
 
         n_trials += 1
 
-        delta_e, i_particle, old_position, coordinates = move_particle(num_particles, max_displacement, coordinates)
+        delta_e, i_particle, old_position, coordinates = move_particle(num_particles, max_displacement, coordinates, simulation_cutoff)
 
         accept = accept_or_reject(delta_e, beta)
 
