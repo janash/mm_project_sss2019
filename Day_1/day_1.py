@@ -34,11 +34,13 @@ def minimum_image_distance(r_i, r_j, box_length):
 
 # Computation of the total system energy
 
-def total_potential_energy(coordinates, box_length):
+def total_potential_energy(coordinates, box_length, cutoff):
 
     e_total = 0.0
+    particle_count = len(coordinates)
+    cutoff2 = cutoff ** 2
 
-    for i_particle in range(num_particles):
+    for i_particle in range(particle_count):
         for j_particle in range(i_particle):
             r_i = coordinates[i_particle]
             r_j = coordinates[j_particle]
@@ -53,6 +55,7 @@ def total_potential_energy(coordinates, box_length):
 
 def tail_correction(box_length, cutoff, number_particles):
 
+
     volume = np.power(box_length, 3)
     sig_by_cutoff3 = np.power(1.0 / cutoff, 3)
     sig_by_cutoff9 = np.power(sig_by_cutoff3, 3)
@@ -61,12 +64,15 @@ def tail_correction(box_length, cutoff, number_particles):
 
     return e_correction
 
-def get_molecule_energy(coordinates, i_particle):
+def get_molecule_energy(coordinates, i_particle, cutoff):
 
     e_total = 0.0
     i_position = coordinates[i_particle]
 
-    for j_particle in range(num_particles):
+    cutoff2 = cutoff ** 2
+    particle_count = len(coordinates)
+
+    for j_particle in range(particle_count):
         if i_particle != j_particle:
 
             j_position = coordinates[j_particle]
@@ -79,14 +85,14 @@ def get_molecule_energy(coordinates, i_particle):
     return e_total
 
 
-def move_particle(num_particles, max_displacement, coordinates):
+def move_particle(num_particles, max_displacement, coordinates, cutoff):
 
     i_particle = np.random.randint(num_particles)
     random_displacement = (2.0 * np.random.rand(3) - 1.0)* max_displacement
     old_position = coordinates[i_particle].copy()
-    old_energy = get_molecule_energy(coordinates, i_particle)
+    old_energy = get_molecule_energy(coordinates, i_particle, cutoff)
     coordinates[i_particle] += random_displacement
-    new_energy = get_molecule_energy(coordinates, i_particle)
+    new_energy = get_molecule_energy(coordinates, i_particle, cutoff)
 
     return new_energy - old_energy, i_particle, old_position, coordinates
 
@@ -165,14 +171,14 @@ if __name__ == "__main__":
             f.readline()
             box_length = float(f.readline().split()[0])
 
-    cutoff = 3.0
-    cutoff2 = np.power(cutoff, 2)
+    simulation_cutoff = 3.0
+    simulation_cutoff2 = np.power(simulation_cutoff, 2)
     n_trials = 0
     n_accept = 0
     energy_array = np.zeros(n_steps)
 
-    total_pair_energy = total_potential_energy(coordinates, box_length)
-    tail_correction = tail_correction(box_length, cutoff, num_particles)
+    total_pair_energy = total_potential_energy(coordinates, box_length, simulation_cutoff)
+    tail_correction = tail_correction(box_length, simulation_cutoff)
     print(total_pair_energy)
 
     traj = open('traj.xyz', 'w') 
@@ -185,7 +191,7 @@ if __name__ == "__main__":
 
         n_trials += 1
 
-        delta_e, i_particle, old_position, coordinates = move_particle(num_particles, max_displacement, coordinates)
+        delta_e, i_particle, old_position, coordinates = move_particle(num_particles, max_displacement, coordinates, simulation_cutoff)
 
         accept = accept_or_reject(delta_e, beta)
 
