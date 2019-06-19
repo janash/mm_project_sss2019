@@ -53,13 +53,14 @@ def total_potential_energy(coordinates, box_length, cutoff):
 
 # Computation of the energy tail correction
 
-def tail_correction(box_length, cutoff):
+def tail_correction(box_length, cutoff, number_particles):
+
 
     volume = np.power(box_length, 3)
     sig_by_cutoff3 = np.power(1.0 / cutoff, 3)
     sig_by_cutoff9 = np.power(sig_by_cutoff3, 3)
     e_correction = sig_by_cutoff9 - 3.0 * sig_by_cutoff3
-    e_correction *= 8.0 / 9.0 * np.pi * num_particles / volume * num_particles
+    e_correction *= 8.0 / 9.0 * np.pi * number_particles / volume * number_particles
 
     return e_correction
 
