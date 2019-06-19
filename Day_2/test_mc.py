@@ -84,7 +84,27 @@ def test_tail_correction(cutoff, nist_reference):
     # Compare to reference from NIST
     assert np.isclose(correction, nist_reference)
 
-    
-    
+def test_accept_or_reject_negative_E():
+    delta_energy = -1
+    beta = 1/0.9
+    assert mc.accept_or_reject(delta_energy, beta) is True
+
+def test_accept_or_reject_0():
+    delta_energy = 0
+    beta = 1/0.9
+    assert mc.accept_or_reject(delta_energy, beta) is True
+
+@pytest.mark.parametrize("seed, expected_response", [
+    (0, True),
+    (8, False)
+    ])
+def test_accept_or_reject_positive_energy(seed, expected_response):
+    # Set the random seed
+    np.random.seed(seed)
+    delta_energy = 0.5
+    beta = 1/0.9
+    assert mc.accept_or_reject(delta_energy, beta) == expected_response
+
+
 
 

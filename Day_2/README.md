@@ -35,12 +35,19 @@ Students will work with their teams on a common repository (MM_teamXX_2019) to f
         - tail_correction
             - Test that your tail correction matches references from NIST (U_LRC*). https://www.nist.gov/mml/csd/chemical-informatics-research-group/lennard-jones-fluid-reference-calculations
             - What pytest feature could you use for this?
+        - accept_or_reject
+            - Verify that `True` is returned for a negative `delta_e`.
+            - Verify that `True` is returned for `delta_e=0`
+            - For `delta_e`> 0 the function relies on a random number generator. In order to get a predictable value from the random number generator, you should set the seed using `np.random.seed(value)` where value corresponds to a random number seed. This will make the call to `np.random.rand()` return the same number every time. 
+            - Find a random seed which will result in a `True` being returned from the function, and one that will result in a `False` being returned from the funciton. Use these for tests.
+            - These conditions can be checked with individual tests, or using a pytest feature.
 
+1. Write `numpy` style docstrings for each function.
 
 1. Add error handling to your functions.
     - For example, in the function `generate_initial_state`, your function should check that input parameters are compatible for each method.
         - if the method is "random", expected inputs are `num_particles` and `box_size`. Having additional or missing arguments should cause a TypeError.
         - if the method is "file", expected inputs are `fname`. Having additional or missing arguments should cause a TypeError.
         - You should check that the method is either "random" or "file". If not either of these, raise a ValueError.
-        - use a `try except` clause to open the file for `method=file`
+        - use a `try except` clause to open the file for `method=file`  
     **Instructor note** - you could walk them through writing this error checking - probably the most complicated of any function.
