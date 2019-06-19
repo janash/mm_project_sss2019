@@ -15,8 +15,6 @@ def nist_file():
     coordinates = mc.generate_initial_state(method='file', fname=nist_file)
     return coordinates, nist_file
 
-
-
 def test_generate_initial_state_random():
     test_particles = 100
     box_length=10
