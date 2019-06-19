@@ -74,6 +74,16 @@ def test_total_potential_energy(nist_file, cutoff, nist_energy):
 
     assert np.isclose(nist_energy, calculated_energy)
 
+@pytest.mark.parametrize("cutoff, nist_reference", [
+    (3, -1.9849E+02),
+    (4, -8.3769E+01),
+]
+)
+def test_tail_correction(cutoff, nist_reference):
+    correction = mc.tail_correction(10, cutoff, 800)
+    # Compare to reference from NIST
+    assert np.isclose(correction, nist_reference)
+
     
     
 
