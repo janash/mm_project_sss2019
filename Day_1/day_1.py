@@ -53,6 +53,7 @@ def total_potential_energy(coordinates, box_length, cutoff):
 
 # Computation of the energy tail correction
 
+
 def tail_correction(box_length, cutoff, number_particles):
 
 
@@ -178,7 +179,7 @@ if __name__ == "__main__":
     energy_array = np.zeros(n_steps)
 
     total_pair_energy = total_potential_energy(coordinates, box_length, simulation_cutoff)
-    tail_correction = tail_correction(box_length, simulation_cutoff)
+    tail_correction = tail_correction(box_length, simulation_cutoff, num_particles)
     print(total_pair_energy)
 
     traj = open('traj.xyz', 'w') 
