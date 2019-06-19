@@ -56,6 +56,7 @@ def total_potential_energy(coordinates, box_length, cutoff):
 
 def tail_correction(box_length, cutoff, number_particles):
 
+
     volume = np.power(box_length, 3)
     sig_by_cutoff3 = np.power(1.0 / cutoff, 3)
     sig_by_cutoff9 = np.power(sig_by_cutoff3, 3)
