@@ -27,7 +27,9 @@ Students will work with their teams on a common repository (MM_teamXX_2019) to f
         - minimum_image_distance
             - Use `@pytest.mark.parametrize` to test the function `minimum_image_distance` for a range of distances.
         - total_potential_energy
-            - Verify that the total potential energy calculated by your function matches that given by NIST for the sample configuration at a specified cut off.
+            - Verify that the total potential energy calculated by your function matches that given by NIST for the sample configuration at a specified cut off. 
+                - See section 2 of https://www.nist.gov/mml/csd/chemical-informatics-research-group/lennard-jones-fluid-reference-calculations
+                - *Hint:* Use `numpy.isclose` in your assertion rather than `==`. Your calculated answer will have higher precision than the answer given by NIST.
             - **Challenge** - NIST gives reference energies for multiple cut offs. What pytest structure can you use here to test both cutoffs?
             - **Challenge** - Since both `test_generate_initial_state_file` and `test_potential_energy` read from a reference file, create a @pytest.fixture which reads from this file and returns the coordinates. Use this fixture with the two tests.
         - tail_correction
