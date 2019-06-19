@@ -1,47 +1,7 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-#%matplotlib notebook
 
-
-"""
-This is the sample code for Day 2 of the software summer school MM project.
-
-Day 2 covers
-- PEP 8
-    - make point that all languages have recommended style and formatting.
-    - C++ style and formatting - how will this be covered?
-- Numpy style docstrings
-- Error and Exception handling
-- testing using pytest
-
-Student milestones:
-Students will work with their teams on a common repository (MM_teamXX_2019) to fulfill the following milestones. Changes to the repo should be done using a Fork/PR model, where every change must be reviewed by one other person before merging.
-1. Write numpy style docstrings for each function
-    - generate_initial_state
-    - lennard_jones_potential
-    - minimum_image_distance
-    - total_potential_energy
-    - tail_correction
-    - get_molecule_energy
-    - move_particle
-    - accept_or_reject
-1. Use a linter to make sure your code adheres to PEP8 guidelines (yapf).
-1. Add error handling to your functions.
-    - For example, in the function `generate_initial_state`, your function should check that input parameters are compatible for each method.
-        - if the method is "random", expected inputs are `num_particles` and `box_size`. Having additional or missing arguments should cause a TypeError.
-        - if the method is "file", expected inputs are `fname`. Having additional or missing arguments should cause a TypeError.
-        - You should check that the method is either "random" or "file". If not either of these, raise a ValueError.
-        - use a `try except` clause to open the file for `method=file`
-    *Instructor note* - you could walk them through writing this error checking - probably the most complicated of any function.
-1. Make sure that each function has at least one unit test. Name the test file `test_mc.py`
-    - create a fixture which returns a system - coordinates, atom names, box length.
-    - Use @pytest.mark.parametrize to test the function `lennard_jones_potential` for a range of distances.
-    - Identify one other function where you could use `parametrize` and write a test.
-1. Test errors and exceptions 
-
-"""
 
 # Generate initial state
 
@@ -65,11 +25,29 @@ def generate_initial_state(method='random', fname=None, num_particles=None, box_
     coordinates : numpy array
         Array of coordinates (x, y, z)
     """
-    if method is 'random':
+    if method == 'random':
+        if num_particles is None:
+            raise ValueError('generate_initial_state - "random" particle placement chosen, please input the number of particles using the num_particles argument.')
+        if box_length is None:
+            raise ValueError('generate_initial_state - "random" particle placement chosen, please input the box length using the box_length argument.')
+        # Randomly placing particles in a box
         coordinates = (0.5 - np.random.rand(num_particles, 3)) * box_length
     
-    elif method is 'file':
-        coordinates = np.loadtxt(fname, skiprows=2, usecols=(1,2,3))
+    elif method == 'file':
+        try:
+            # Reading a reference configuration from NIST
+            coordinates = np.loadtxt(fname, skiprows=2, usecols=(1,2,3))
+        except ValueError:
+            if fname is None:
+                raise ValueError("generate_initial_state: Method set to 'file', but no filepath given. Please specify an input file")
+            else:
+                raise ValueError
+        except OSError:
+            raise OSError(F'File {fname} not found.')
+        except Exception as e:
+            print(e)
+            raise
+    
     return coordinates
 
 # Lennard Jones potential implementation
