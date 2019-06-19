@@ -137,7 +137,21 @@ def total_potential_energy(coordinates, box_length, cutoff):
 
 def tail_correction(box_length, cutoff, number_particles):
     """
+    Calculate the long range tail correction for a system.
 
+    Parameters
+    ----------
+    box_length : float   
+        The length of the simulation box
+    cutoff : float
+        The simulation cutoff. Beyond this distance, interactions are not calculated.
+    number_particles:
+        The number of particles in the simulation
+    
+    Returns
+    -------
+    e_correction : float
+        The long distance tail correction.
     """
 
     volume = np.power(box_length, 3)
@@ -149,6 +163,23 @@ def tail_correction(box_length, cutoff, number_particles):
     return e_correction
 
 def get_molecule_energy(coordinates, i_particle, cutoff):
+    """
+    Calculate the interaction energy of a particle with its environment (all other particles in the system)
+
+    Parameters
+    ----------
+    coordinates : numpy array
+        The coordinates for all particles in the system
+    i_particle : int
+        The particle number for which to calculate the energy
+    cutoff : float
+        The simulation cutoff. Beyond this distance, interactions are not calculated.
+    
+    Returns
+    -------
+    e_total : float 
+        The pairwise interaction energy of he i_th particle with all other particles in the system.
+    """
 
     e_total = 0.0
     i_position = coordinates[i_particle]
@@ -170,6 +201,31 @@ def get_molecule_energy(coordinates, i_particle, cutoff):
 
 
 def move_particle(num_particles, max_displacement, coordinates, cutoff):
+    """
+    Moves a random particle in `coordinates` array by a random distance within the specified max displacement.
+
+    Parameters
+    ----------
+    num_particles : int
+        The number of particles in the simlation.
+    max_displacement : float
+        The maximum distance a particle should move during a trial.
+    coordinates: numpy array
+        Coordinates for all particles in the simulation.
+    cutoff : float  
+        The simulation cutoff. Beyond this distance, interactions are not calculated.
+    
+    Returns
+    -------
+    new_energy - old_energy : float
+        The energy difference for the particle move
+    i_particle : int
+        Index of the random particle which was moved
+    old_position : numpy array
+        Previous coordinates of i_particle
+    coordinates : numpy array
+        Coordinates for all particles in the simulation. Has been modified so that i_particle has new position.
+    """
 
     i_particle = np.random.randint(num_particles)
     random_displacement = (2.0 * np.random.rand(3) - 1.0)* max_displacement
@@ -181,7 +237,23 @@ def move_particle(num_particles, max_displacement, coordinates, cutoff):
     return new_energy - old_energy, i_particle, old_position, coordinates
 
 def accept_or_reject(delta_e, beta):
+    """
+    Calculate if move is accepted or rejected based on the energy change, simulation temperature (beta), and (possibly) a random number.
 
+    In Monte Carlo simuations, moves which result in a negative change in energy (delta_e) are accepted, while moves which result in a positive energy change are accepted or rejected depending on calculation of acceptance probability (p_acc = np.exp(-beta*delta_e)) compared to a random number generator.
+
+    Parameters
+    ----------
+    delta_e : float
+        Energy change caused by movement of a particle
+    beta : float
+        1 / (reduced temperature)
+    
+    Returns
+    -------
+    accept : bool
+        True if move is accepted, False if move is rejected.
+    """
     if delta_e <= 0.0:
         accept = True
     else:
@@ -195,12 +267,49 @@ def accept_or_reject(delta_e, beta):
     return accept
 
 def restore_system(coordinates, i_particle, old_position):
+    """
+    Return coordinates to previous value.
+
+    Parameters
+    ----------
+    coordinates : numpy array
+        The coordinates for all particles in a system
+    i_particle : int
+        The index of particle i which coordinates are to be restored for
+    old_position : float
+
+    Returns
+    -------
+    coordinates : numpy array
+        The updated system coordinates.
+    """
 
     coordinates[i_particle] = old_position
 
     return coordinates
 
 def adjust_displacement(freq, i_step, n_trials, n_accept, max_displacement):
+    """
+    Adjust the max displacement to achieve ideal acceptance rate.
+
+    Parameters
+    ----------
+    freq : int
+        Step interval at which adjustment should be performed. 
+    i_step : int
+        The current step number
+    n_trials : int
+        Count of the number of trials since last adjustment
+    n_accept : int
+        Count of the number of trials which have resulted in a move acceptance.
+    max_displacement : float
+        The maximum distance a particle can be moved during a trial
+    
+    Return
+    ------
+    max_displacement : float
+
+    """
 
     if np.mod(i_step + 1, freq) == 0:
         acc_rate = float(n_accept) / float(n_trials)
@@ -213,6 +322,24 @@ def adjust_displacement(freq, i_step, n_trials, n_accept, max_displacement):
     return max_displacement
 
 def update_output_file(traj, i_step, freq, element, num_particles, coordinates):
+    """
+    Write coordinates to output file.
+
+    Parameters
+    ----------
+    traj : file
+        Open file object. Where data will be written.
+    i_step : int
+        The step number.
+    freq : int
+        The write frequency. Write to a file on when mod(i_step + 1, freq) == 0
+    element: str
+        Element of particles
+    num_particles : int
+        The number of particles in the simulation
+    coordinates : numpy array
+        The coordinates for all particles in the system. 
+    """
 
     if np.mod(i_step + 1, freq) == 0:
 
