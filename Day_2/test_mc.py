@@ -43,6 +43,28 @@ def test_generate_inital_state_file(nist_file):
     assert np.all(np.equal(first_coord, coords[0]))
     assert np.all(np.equal(last_coord, coords[-1]))
 
+@pytest.mark.parametrize("method, options, error", [
+    ("random", {"num_particles": None, "box_length": 10}, ValueError),
+    ("random", {"num_particles": 100, "box_length": None}, ValueError),
+])
+def test_generate_initial_state_random_error(method, options, error):
+    """
+    Test failure for generate initial state - we are not giving specific directions for how to do this, so they may write several functions.
+    """
+    with pytest.raises(error):
+        mc.generate_initial_state(method=method, num_particles=options["num_particles"], box_length=options["box_length"])
+
+@pytest.mark.parametrize("method, filename, error", [
+    ("file", "this_file_doesnt_exist.txt", OSError),
+    ("file", None, ValueError)
+])
+def test_generate_initial_state_file_error(method, filename, error):
+    """
+    Test failure for generate initial state - we are not giving specific directions for how to do this, so they may write several functions.
+    """
+    with pytest.raises(error):
+        mc.generate_initial_state(method=method, fname=filename)
+
 @pytest.mark.parametrize("distance2, expected_energy",[
     (0.5 , 4*((1/0.5)**6 - (1/0.5)**3) ),
     (1 , 0),

@@ -51,3 +51,5 @@ Students will work with their teams on a common repository (MM_teamXX_2019) to f
         - You should check that the method is either "random" or "file". If not either of these, raise a ValueError.
         - use a `try except` clause to open the file for `method=file`  
     **Instructor note** - you could walk them through writing this error checking - probably the most complicated of any function.
+
+1. Add tests to check the the error handling you've added. Use the `with pytest.raises(ExpectedError)` syntax, where `ExpectedError` is the error you expect.
