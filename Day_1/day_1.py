@@ -6,13 +6,14 @@ from mpl_toolkits.mplot3d import Axes3D
 
 # Generate initial state
 
-def generate_initial_state(method='random', fname=None, num_particles=None, box_length=None):
+def generate_initial_coordinates(method='random', fname=None, num_particles=None, box_length=None):
 
     if method is 'random':
         coordinates = (0.5 - np.random.rand(num_particles, 3)) * box_length
     
     elif method is 'file':
         coordinates = np.loadtxt(fname, skiprows=2, usecols=(1,2,3))
+    
     return coordinates
 
 # Lennard Jones potential implementation
@@ -143,7 +144,6 @@ if __name__ == "__main__":
     # Parameter setup
     # ---------------
 
-    reduced_density = 0.9
     reduced_temperature = 0.9
     max_displacement = 0.1
     n_steps = 50000
@@ -160,17 +160,19 @@ if __name__ == "__main__":
     method = 'file'
     element = 'C'
 
-    if method == 'random':
-        num_particles = 100
-        box_length = np.cbrt(num_particles / reduced_density)
-        coordintes = generate_initial_state(method=method, num_particles=num_particles, box_length=box_length)
-    else:
-        file_name = os.path.join('..', 'nist_sample_config1.txt')
-        coordinates = generate_initial_state(method=method, fname=file_name)
-        num_particles = len(coordinates)
-        with open(file_name) as f:
-            f.readline()
-            box_length = float(f.readline().split()[0])
+    # Method = random
+    # reduced_density = 0.9
+    # num_particles = 100
+    # box_length = np.cbrt(num_particles / reduced_density)
+    # coordinates = generate_initial_coordinates(method=method, num_particles=num_particles, box_length=box_length)
+
+    # Method = file
+    file_name = os.path.join('..', 'nist_sample_config1.txt')
+    coordinates = generate_initial_coordinates(method=method, fname=file_name)
+    num_particles = len(coordinates)
+    with open(file_name) as f:
+        f.readline()
+        box_length = float(f.readline().split()[0])
 
     simulation_cutoff = 3.0
     simulation_cutoff2 = np.power(simulation_cutoff, 2)
