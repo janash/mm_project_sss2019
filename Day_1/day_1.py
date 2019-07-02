@@ -91,12 +91,16 @@ def move_particle(num_particles, max_displacement, coordinates, cutoff):
 
     i_particle = np.random.randint(num_particles)
     random_displacement = (2.0 * np.random.rand(3) - 1.0)* max_displacement
-    old_position = coordinates[i_particle].copy()
+    
+    # old_position = coordinates[i_particle].copy()
     old_energy = get_molecule_energy(coordinates, i_particle, cutoff)
-    coordinates[i_particle] += random_displacement
-    new_energy = get_molecule_energy(coordinates, i_particle, cutoff)
+    
+    # Make a copy before adding random displacement
+    new_coordinates = coordinates.copy()
+    new_coordinates[i_particle] += random_displacement
+    new_energy = get_molecule_energy(new_coordinates, i_particle, cutoff)
 
-    return new_energy - old_energy, i_particle, old_position, coordinates
+    return new_energy - old_energy, i_particle, random_displacement
 
 def accept_or_reject(delta_e, beta):
 
@@ -111,12 +115,6 @@ def accept_or_reject(delta_e, beta):
             accept = False
 
     return accept
-
-def restore_system(coordinates, i_particle, old_position):
-
-    coordinates[i_particle] = old_position
-
-    return coordinates
 
 def adjust_displacement(freq, i_step, n_trials, n_accept, max_displacement):
 
@@ -149,6 +147,7 @@ if __name__ == "__main__":
     n_steps = 50000
     freq = 1000
     tune_displacement = True
+    simulation_cutoff = 3.0
 
     beta = 1 / reduced_temperature
 
@@ -174,7 +173,7 @@ if __name__ == "__main__":
         f.readline()
         box_length = float(f.readline().split()[0])
 
-    simulation_cutoff = 3.0
+    
     simulation_cutoff2 = np.power(simulation_cutoff, 2)
     n_trials = 0
     n_accept = 0
@@ -194,15 +193,17 @@ if __name__ == "__main__":
 
         n_trials += 1
 
-        delta_e, i_particle, old_position, coordinates = move_particle(num_particles, max_displacement, coordinates, simulation_cutoff)
+        delta_e, i_particle, random_movement = move_particle(num_particles, max_displacement, coordinates, simulation_cutoff)
 
         accept = accept_or_reject(delta_e, beta)
 
         if accept:
             total_pair_energy += delta_e
             n_accept += 1
+            coordinates[i_particle] += random_movement
         else:
-            coordinates = restore_system(coordinates, i_particle, old_position)
+            pass
+            
 
         if tune_displacement:
             max_displacement = adjust_displacement(freq, i_step, n_trials, n_accept, max_displacement)
