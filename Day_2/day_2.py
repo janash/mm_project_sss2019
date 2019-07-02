@@ -1,11 +1,9 @@
 import os
 import numpy as np
-import matplotlib.pyplot as plt
-
 
 # Generate initial state
 
-def generate_initial_state(method='random', fname=None, num_particles=None, box_length=None):
+def generate_initial_coordinates(method='random', fname=None, num_particles=None, box_length=None):
     """
     Generate initial coordinates for MC system.
 
@@ -221,20 +219,22 @@ def move_particle(num_particles, max_displacement, coordinates, cutoff):
         The energy difference for the particle move
     i_particle : int
         Index of the random particle which was moved
-    old_position : numpy array
-        Previous coordinates of i_particle
-    coordinates : numpy array
-        Coordinates for all particles in the simulation. Has been modified so that i_particle has new position.
+    random_displacement : numpy.array
+        The random displacement
     """
 
     i_particle = np.random.randint(num_particles)
     random_displacement = (2.0 * np.random.rand(3) - 1.0)* max_displacement
-    old_position = coordinates[i_particle].copy()
+    
+    # old_position = coordinates[i_particle].copy()
     old_energy = get_molecule_energy(coordinates, i_particle, cutoff)
-    coordinates[i_particle] += random_displacement
-    new_energy = get_molecule_energy(coordinates, i_particle, cutoff)
+    
+    # Make a copy before adding random displacement
+    new_coordinates = coordinates.copy()
+    new_coordinates[i_particle] += random_displacement
+    new_energy = get_molecule_energy(new_coordinates, i_particle, cutoff)
 
-    return new_energy - old_energy, i_particle, old_position, coordinates
+    return new_energy - old_energy, i_particle, random_displacement
 
 def accept_or_reject(delta_e, beta):
     """
@@ -353,12 +353,12 @@ if __name__ == "__main__":
     # Parameter setup
     # ---------------
 
-    reduced_density = 0.9
     reduced_temperature = 0.9
     max_displacement = 0.1
     n_steps = 50000
     freq = 1000
     tune_displacement = True
+    simulation_cutoff = 3.0
 
     beta = 1 / reduced_temperature
 
@@ -370,19 +370,21 @@ if __name__ == "__main__":
     method = 'file'
     element = 'C'
 
-    if method == 'random':
-        num_particles = 100
-        box_length = np.cbrt(num_particles / reduced_density)
-        coordintes = generate_initial_state(method=method, num_particles=num_particles, box_length=box_length)
-    else:
-        file_name = os.path.join('..', 'nist_sample_config1.txt')
-        coordinates = generate_initial_state(method=method, fname=file_name)
-        num_particles = len(coordinates)
-        with open(file_name) as f:
-            f.readline()
-            box_length = float(f.readline().split()[0])
+    # Method = random
+    # reduced_density = 0.9
+    # num_particles = 100
+    # box_length = np.cbrt(num_particles / reduced_density)
+    # coordinates = generate_initial_coordinates(method=method, num_particles=num_particles, box_length=box_length)
 
-    simulation_cutoff = 3.0
+    # Method = file
+    file_name = os.path.join('..', 'nist_sample_config1.txt')
+    coordinates = generate_initial_coordinates(method=method, fname=file_name)
+    num_particles = len(coordinates)
+    with open(file_name) as f:
+        f.readline()
+        box_length = float(f.readline().split()[0])
+
+    
     simulation_cutoff2 = np.power(simulation_cutoff, 2)
     n_trials = 0
     n_accept = 0
@@ -402,15 +404,17 @@ if __name__ == "__main__":
 
         n_trials += 1
 
-        delta_e, i_particle, old_position, coordinates = move_particle(num_particles, max_displacement, coordinates, simulation_cutoff)
+        delta_e, i_particle, random_movement = move_particle(num_particles, max_displacement, coordinates, simulation_cutoff)
 
         accept = accept_or_reject(delta_e, beta)
 
         if accept:
             total_pair_energy += delta_e
             n_accept += 1
+            coordinates[i_particle] += random_movement
         else:
-            coordinates = restore_system(coordinates, i_particle, old_position)
+            pass
+            
 
         if tune_displacement:
             max_displacement = adjust_displacement(freq, i_step, n_trials, n_accept, max_displacement)

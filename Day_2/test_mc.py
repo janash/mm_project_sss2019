@@ -12,13 +12,13 @@ import day_2 as mc
 @pytest.fixture
 def nist_file():
     nist_file = os.path.join('..','nist_sample_config1.txt')
-    coordinates = mc.generate_initial_state(method='file', fname=nist_file)
+    coordinates = mc.generate_initial_coordinates(method='file', fname=nist_file)
     return coordinates, nist_file
 
-def test_generate_initial_state_random():
+def test_generate_initial_coordinates_random():
     test_particles = 100
     box_length=10
-    coords = mc.generate_initial_state(method='random', num_particles=test_particles, box_length=box_length)
+    coords = mc.generate_initial_coordinates(method='random', num_particles=test_particles, box_length=box_length)
     assert test_particles == len(coords)
     
     # Check that coords are within bounds
@@ -28,7 +28,7 @@ def test_generate_initial_state_random():
     min_coord = np.min(coords)
     assert -box_length/2 < min_coord
 
-def test_generate_inital_state_file(nist_file):
+def test_generate_inital_coordinates_file(nist_file):
     
     coords = nist_file[0]
     test_file = nist_file[1]
@@ -47,12 +47,12 @@ def test_generate_inital_state_file(nist_file):
     ("random", {"num_particles": None, "box_length": 10}, ValueError),
     ("random", {"num_particles": 100, "box_length": None}, ValueError),
 ])
-def test_generate_initial_state_random_error(method, options, error):
+def test_generate_initial_coordinates_random_error(method, options, error):
     """
     Test failure for generate initial state - we are not giving specific directions for how to do this, so they may write several functions.
     """
     with pytest.raises(error):
-        mc.generate_initial_state(method=method, num_particles=options["num_particles"], box_length=options["box_length"])
+        mc.generate_initial_coordinates(method=method, num_particles=options["num_particles"], box_length=options["box_length"])
 
 @pytest.mark.parametrize("method, filename, error", [
     ("file", "this_file_doesnt_exist.txt", OSError),
@@ -63,7 +63,7 @@ def test_generate_initial_state_file_error(method, filename, error):
     Test failure for generate initial state - we are not giving specific directions for how to do this, so they may write several functions.
     """
     with pytest.raises(error):
-        mc.generate_initial_state(method=method, fname=filename)
+        mc.generate_initial_coordinates(method=method, fname=filename)
 
 @pytest.mark.parametrize("distance2, expected_energy",[
     (0.5 , 4*((1/0.5)**6 - (1/0.5)**3) ),
@@ -125,7 +125,11 @@ def test_accept_or_reject_positive_energy(seed, expected_response):
     np.random.seed(seed)
     delta_energy = 0.5
     beta = 1/0.9
-    assert mc.accept_or_reject(delta_energy, beta) == expected_response
+    try:
+        assert mc.accept_or_reject(delta_energy, beta) == expected_response
+    finally:
+        # Reset seed - a best practice in case other tests follow.
+        np.random.seed()
 
 
 
