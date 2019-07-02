@@ -5,11 +5,7 @@ OOP classes hold state.
 ## Student Milestones
 
 1. Create a class called Particle which will hold the following attributes for each particle in the system.
-    - name 
     - symbol
-    - coordinate (x,y,z as numpy array)
-    - total_pair_energy (interaction energy of particle with system)
-    - **Question** - Do we need a particle class, or should we just keep track of particle coordinates and info with lists and numpy arrays in Box class?
 
 1. Create a Box class.
     The Box class should have the the following attributes.
@@ -27,7 +23,9 @@ OOP classes hold state.
 1. Create a MCSystem class.
     The MCSystem class should have the following attributes
         - box - a Box object
-        - particles - list of Particle objects
+        - particles - list of Particle objects (the index of this list corresponds to index of the coordinate array.)
+        - coordinates
+            - a numpy array
         - cutoff - the simulation cut off
         - max_displacement - the maximum displacement for a Monte Carlo move.
         - beta
@@ -37,9 +35,15 @@ OOP classes hold state.
         - accept_or_reject (a static method (memory efficiency) - or function outside of class)
         - total_potential_energy
         - tail_correction
-        - get_molecule_energy
+        - get_particle_energy
             - *Note* This should set the `total_pair_energy` attribute for a particle.
-        - move_particle
+        - move_particle -> rename `propose_move`
+            - select random particle
+            - apply random displacement based on self.max_displacement
+            - calculate energy difference
+            - return energy difference
 
 1. Use the Factory Design patterns to create MCSystems
+    - Specifiy method
+        - associated arguments
     
