@@ -198,7 +198,7 @@ def get_molecule_energy(coordinates, i_particle, cutoff):
     return e_total
 
 
-def move_particle(num_particles, max_displacement, coordinates, cutoff):
+def propose_move(num_particles, max_displacement, coordinates, cutoff):
     """
     Moves a random particle in `coordinates` array by a random distance within the specified max displacement.
 
@@ -404,7 +404,7 @@ if __name__ == "__main__":
 
         n_trials += 1
 
-        delta_e, i_particle, random_movement = move_particle(num_particles, max_displacement, coordinates, simulation_cutoff)
+        delta_e, i_particle, random_movement = propose_move(num_particles, max_displacement, coordinates, simulation_cutoff)
 
         accept = accept_or_reject(delta_e, beta)
 
