@@ -404,17 +404,27 @@ if __name__ == "__main__":
 
         n_trials += 1
 
-        delta_e, i_particle, random_movement = propose_move(num_particles, max_displacement, coordinates, simulation_cutoff)
+        # ---------------------------
+        #  Propose a Monte Carlo Move
+        # ---------------------------
+        i_particle = np.random.randint(num_particles)
+        random_displacement = (2.0 * np.random.rand(3) - 1.0)* max_displacement
+    
+        current_energy = get_molecule_energy(coordinates, i_particle, simulation_cutoff)
+        
+        # Make a copy before adding random displacement
+        proposed_coordinates = coordinates.copy()
+        proposed_coordinates[i_particle] += random_displacement
+        proposed_energy = get_molecule_energy(proposed_coordinates, i_particle, simulation_cutoff)
 
+        delta_e = proposed_energy - current_energy
+        
         accept = accept_or_reject(delta_e, beta)
 
         if accept:
             total_pair_energy += delta_e
             n_accept += 1
-            coordinates[i_particle] += random_movement
-        else:
-            pass
-            
+            coordinates[i_particle] += random_displacement
 
         if tune_displacement:
             max_displacement = adjust_displacement(freq, i_step, n_trials, n_accept, max_displacement)
