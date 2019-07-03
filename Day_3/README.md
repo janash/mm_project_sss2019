@@ -8,27 +8,27 @@ OOP classes hold state.
     - symbol
 
 1. Create a Box class.
-    The Box class should have the the following attributes.
-        - box dimensions
-            - box_length (box dimensions)
-            - could be extended to x,y,z and angles
-                - Classes which inherit from box and have extensions.
+    The Box class should be initialized with a box length, and should have the following.
+    -  box dimensions
+        *  box_length (box dimensions)
+        * could be extended to x,y,z and angles
+            * Classes which inherit from box and have extensions.
 
     The Box class should have the following methods.
-        - minimum_image_distance
-        - volume
-            - methods will return values rather than storing. Based on current state of class.     
+    - minimum_image_distance
+    - volume
+        * methods will return values rather than storing. Based on current state of class.     
 
 
 1. Create a MCSystem class.
     The MCSystem class should have the following attributes
-        - box - a Box object
-        - particles - list of Particle objects (the index of this list corresponds to index of the coordinate array.)
-        - coordinates
-            - a numpy array
-        - cutoff - the simulation cut off
-        - max_displacement - the maximum displacement for a Monte Carlo move.
-        - beta
+    - box - a Box object
+    - particles - list of Particle objects (the index of this list corresponds to index of the coordinate array.)
+     - coordinates
+        - a numpy array
+    - cutoff - the simulation cut off
+    - max_displacement - the maximum displacement for a Monte Carlo move.
+    - beta
     
     The MCSystem class should have the following methods
         - lennard_jones_potential (a static method (memory efficiency) - or function outside of class)
