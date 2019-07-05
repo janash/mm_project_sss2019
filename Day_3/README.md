@@ -34,7 +34,8 @@ We do not have a particle class. Since the only attribute of a particle we care 
     - total_potential_energy
     - tail_correction
     - calculate_particle_energy
-    
+
+1. Refactor your code to use these classes.
 
 1. Functions
     - lennard_jones_potential
