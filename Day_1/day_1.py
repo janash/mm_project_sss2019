@@ -35,7 +35,7 @@ def minimum_image_distance(r_i, r_j, box_length):
 
 # Computation of the total system energy
 
-def total_potential_energy(coordinates, box_length, cutoff):
+def total_pair_energy(coordinates, box_length, cutoff):
 
     e_total = 0.0
     particle_count = len(coordinates)
@@ -52,9 +52,6 @@ def total_potential_energy(coordinates, box_length, cutoff):
 
     return e_total
 
-# Computation of the energy tail correction
-
-
 def tail_correction(box_length, cutoff, number_particles):
 
 
@@ -66,7 +63,7 @@ def tail_correction(box_length, cutoff, number_particles):
 
     return e_correction
 
-def get_molecule_energy(coordinates, i_particle, cutoff):
+def get_particle_energy(coordinates, i_particle, cutoff):
 
     e_total = 0.0
     i_position = coordinates[i_particle]
@@ -100,25 +97,16 @@ def accept_or_reject(delta_e, beta):
 
     return accept
 
-def adjust_displacement(freq, i_step, n_trials, n_accept, max_displacement):
+def adjust_displacement(n_trials, n_accept, max_displacement):
 
-    if np.mod(i_step + 1, freq) == 0:
-        acc_rate = float(n_accept) / float(n_trials)
-        if (acc_rate < 0.380):
-            max_displacement *= 0.8
-        elif (acc_rate > 0.42):
-            max_displacement *= 1.2
-        n_trials = 0
-        n_accept = 0
+    acc_rate = float(n_accept) / float(n_trials)
+    if (acc_rate < 0.380):
+        max_displacement *= 0.8
+    elif (acc_rate > 0.42):
+        max_displacement *= 1.2
+    n_trials = 0
+    n_accept = 0
     return max_displacement
-
-def update_output_file(traj, i_step, freq, element, num_particles, coordinates):
-
-    if np.mod(i_step + 1, freq) == 0:
-
-        traj.write(str(num_particles) + '\n\n')
-        for i_particle in range(num_particles):
-            traj.write("%s %10.5f %10.5f %10.5f \n" % (element, coordinates[i_particle][0], coordinates[i_particle][1], coordinates[i_particle][2]))
 
 if __name__ == "__main__":
         
@@ -163,7 +151,7 @@ if __name__ == "__main__":
     n_accept = 0
     energy_array = np.zeros(n_steps)
 
-    total_pair_energy = total_potential_energy(coordinates, box_length, simulation_cutoff)
+    total_pair_energy = total_pair_energy(coordinates, box_length, simulation_cutoff)
     tail_correction = tail_correction(box_length, simulation_cutoff, num_particles)
     print(total_pair_energy)
 
@@ -183,12 +171,12 @@ if __name__ == "__main__":
         i_particle = np.random.randint(num_particles)
         random_displacement = (2.0 * np.random.rand(3) - 1.0)* max_displacement
     
-        current_energy = get_molecule_energy(coordinates, i_particle, simulation_cutoff)
+        current_energy = get_particle_energy(coordinates, i_particle, simulation_cutoff)
         
         # Make a copy before adding random displacement
         proposed_coordinates = coordinates.copy()
         proposed_coordinates[i_particle] += random_displacement
-        proposed_energy = get_molecule_energy(proposed_coordinates, i_particle, simulation_cutoff)
+        proposed_energy = get_particle_energy(proposed_coordinates, i_particle, simulation_cutoff)
 
         delta_e = proposed_energy - current_energy
         
@@ -199,16 +187,23 @@ if __name__ == "__main__":
             n_accept += 1
             coordinates[i_particle] += random_displacement
 
-        if tune_displacement:
-            max_displacement = adjust_displacement(freq, i_step, n_trials, n_accept, max_displacement)
+        
 
         total_energy = (total_pair_energy + tail_correction) / num_particles
 
         energy_array[i_step] = total_energy
 
-        update_output_file(traj, i_step, freq, element, num_particles, coordinates)
+        if np.mod(i_step + 1, freq) == 0:
+            # Update output file
+            traj.write(str(num_particles) + '\n\n')
+            for i_particle in range(num_particles):
+                traj.write("%s %10.5f %10.5f %10.5f \n" % (element, coordinates[i_particle][0], coordinates[i_particle][1], coordinates[i_particle][2]))
+            
+            # Adjust displacement
+            if tune_displacement:
+                max_displacement = adjust_displacement(n_trials, n_accept, max_displacement)
 
-        if np.mod(i_step + 1, 1000) == 0:
+            # Print info
             print (i_step + 1, energy_array[i_step])
 
     traj.close()
