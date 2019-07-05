@@ -1,7 +1,7 @@
 import os
 import numpy as np
 
-# Generate initial state
+import math
 
 class Box:
     def __init__(self, box_length):
@@ -40,6 +40,22 @@ class Box:
         """Wrap points which are outside of box into box"""
         # TODO
         pass
+    
+class TriclinicBox(Box):
+    def __init__(self, box_length, box_angles):
+        """
+        Create a triclinic box
+        """
+        super().__init__(box_length)
+        self.box_angles = box_angles
+    
+    @property
+    def volume(self):
+        term1 = self.box_length ** 3
+        term1 *= 1 - math.cos(self.box_angles[0] ** 2) - math.cos(self.box_angles[1] ** 2) - math.cos(self.box_angles[2] ** 2)
+        term2 = 2 * math.sqrt(math.cos(self.box_angles[0]*self.box_angles[1]*self.box_angles[2]))
+        
+        return term1 + term2
 
 
 class MCState:
@@ -337,7 +353,7 @@ if __name__ == "__main__":
         box_length = float(f.readline().split()[0])
 
     # Initialized objects
-    box = Box(box_length)
+    box = Box(box_length = box_length)
     mc_system = MCState(box=box, cutoff=simulation_cutoff, max_displacement=max_displacement, reduced_temperature=reduced_temperature, coordinates=coordinates)
     
     n_trials = 0
