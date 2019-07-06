@@ -42,18 +42,24 @@ class Box:
         pass
     
 class TriclinicBox(Box):
-    def __init__(self, box_length, box_angles):
+    def __init__(self, box_length, tilt_factors):
         """
         Create a triclinic box
         """
         super().__init__(box_length)
-        self.box_angles = box_angles
+        self.tilt_factors = tilt_factors
+        self.calculate_box_angles()
     
+    def calculate_box_angles(self):
+        # TODO - implement this
+        self.box_angles = self.tilt_factors
+        pass
+
     @property
     def volume(self):
         term1 = self.box_length ** 3
-        term1 *= 1 - math.cos(self.box_angles[0] ** 2) - math.cos(self.box_angles[1] ** 2) - math.cos(self.box_angles[2] ** 2)
-        term2 = 2 * math.sqrt(math.cos(self.box_angles[0]*self.box_angles[1]*self.box_angles[2]))
+        term1 *= 1 - math.cos(self.box_angles[0]) ** 2 - math.cos(self.box_angles[1]) ** 2 - math.cos(self.box_angles[2]) ** 2
+        term2 = 2 * math.sqrt(math.cos(self.box_angles[0])*math.cos(self.box_angles[1])*math.cos(self.box_angles[2]))
         
         return term1 + term2
 
@@ -182,7 +188,7 @@ class MCState:
         return e_total
 
     
-def generate_initial_coordinates(method='random', fname=None, num_particles=None, box_length=None):
+def generate_initial_coordinates(method='random', **kwargs):
     """
     Generate initial coordinates for MC system.
 
@@ -202,28 +208,44 @@ def generate_initial_coordinates(method='random', fname=None, num_particles=None
     coordinates : numpy array
         Array of coordinates (x, y, z)
     """
-    if method == 'random':
-        if num_particles is None:
-            raise ValueError('generate_initial_state - "random" particle placement chosen, please input the number of particles using the num_particles argument.')
-        if box_length is None:
-            raise ValueError('generate_initial_state - "random" particle placement chosen, please input the box length using the box_length argument.')
-        # Randomly placing particles in a box
-        coordinates = (0.5 - np.random.rand(num_particles, 3)) * box_length
     
-    elif method == 'file':
-        try:
-            # Reading a reference configuration from NIST
-            coordinates = np.loadtxt(fname, skiprows=2, usecols=(1,2,3))
-        except ValueError:
-            if fname is None:
-                raise ValueError("generate_initial_state: Method set to 'file', but no filepath given. Please specify an input file")
-            else:
-                raise ValueError
-        except OSError:
-            raise OSError(F'File {fname} not found.')
-        except Exception as e:
-            print(e)
-            raise
+    #coord_method = get_method(method)
+    coord_method = get_method(method)
+
+    return coord_method(**kwargs)
+
+def get_method(method):
+    if method == "random":
+        return _random
+    elif method == "file":
+        return _from_file
+    else:
+        raise ValueError("Method not found.")
+
+def _random(num_particles, box_length):
+    if num_particles is None:
+        raise ValueError('generate_initial_coordinates - "random" particle placement chosen, please input the number of particles using the num_particles argument.')
+    if box_length is None:
+        raise ValueError('generate_initial_coordinates - "random" particle placement chosen, please input the box length using the box_length argument.')
+    # Randomly placing particles in a box
+    coordinates = (0.5 - np.random.rand(num_particles, 3)) * box_length
+    
+    return coordinates
+
+def _from_file(fname):
+    try:
+        # Reading a reference configuration from NIST
+        coordinates = np.loadtxt(fname, skiprows=2, usecols=(1,2,3))
+    except ValueError:
+        if fname is None:
+            raise ValueError("generate_initial_coordinates: Method set to 'file', but no filepath given. Please specify an input file")
+        else:
+            raise ValueError
+    except OSError:
+        raise OSError(F'File {fname} not found.')
+    except Exception as e:
+        print(e)
+        raise
     
     return coordinates
 
@@ -314,6 +336,7 @@ def adjust_displacement(n_trials, n_accept, max_displacement):
     return max_displacement
 
 
+
 if __name__ == "__main__":
         
     # ---------------
@@ -326,8 +349,8 @@ if __name__ == "__main__":
     freq = 1000
     tune_displacement = True
     simulation_cutoff = 3.0
+    
     simulation_cutoff2 = np.power(simulation_cutoff, 2)
-
     beta = 1 / reduced_temperature
 
     # -------------------------
@@ -345,7 +368,8 @@ if __name__ == "__main__":
     # coordinates = generate_initial_coordinates(method=method, num_particles=num_particles, box_length=box_length)
 
     # Method = file
-    file_name = os.path.join('..', 'nist_sample_config1.txt')
+
+    file_name = os.path.join('..','nist_sample_config1.txt')
     coordinates = generate_initial_coordinates(method=method, fname=file_name)
     num_particles = len(coordinates)
     with open(file_name) as f:
