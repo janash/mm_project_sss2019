@@ -4,8 +4,19 @@ import numpy as np
 import math
 
 class Box:
-    def __init__(self, box_length):
+    def __init__(self, box_length, particles=None):
         self.box_length = box_length
+        self.particles = particles # if None, no particles in MCSystem
+        
+        # Calculated quantities
+        self.calculate_number_particles()
+    
+    def calculate_number_particles(self):
+        """Calculate the number of particles"""
+        if self.particles is None:
+            self.number_particles = 0
+        else:
+            self.number_particles = len(self.particles)
     
     def minimum_image_distance(self, r_i, r_j):
         """
@@ -60,31 +71,19 @@ class TriclinicBox(Box):
         term1 = self.box_length ** 3
         term1 *= 1 - math.cos(self.box_angles[0]) ** 2 - math.cos(self.box_angles[1]) ** 2 - math.cos(self.box_angles[2]) ** 2
         term2 = 2 * math.sqrt(math.cos(self.box_angles[0])*math.cos(self.box_angles[1])*math.cos(self.box_angles[2]))
-        
         return term1 + term2
 
 
 class MCState:
-    def __init__(self, box, cutoff, max_displacement, reduced_temperature, coordinates=None):
+    def __init__(self, box, cutoff, max_displacement, reduced_temperature):
         self.box = box
         self.cutoff = cutoff
         self.beta = 1 / reduced_temperature
         self.max_displacement = max_displacement
-        self.coordinates = coordinates # if None, no particles in MCSystem
+        self.coordinates = box.particles
         
-        # Calculated quantities
-        self.calculate_number_particles()
         self.calculate_total_energy()
-        
-    
-    def calculate_number_particles(self):
-        """Calculate the number of particles"""
-        if self.coordinates is None:
-            self.number_particles = 0
-        else:
-            self.number_particles = len(self.coordinates)
-        
-         
+            
     def calculate_total_pair_energy(self):
         """
         Calculate the total potential energy of the system using a pairwise Lennard Jones potential.
@@ -103,7 +102,7 @@ class MCState:
         """
 
         e_total = 0.0
-        particle_count = self.number_particles
+        particle_count = self.box.number_particles
         cutoff2 = self.cutoff ** 2
 
         for i_particle in range(particle_count):
@@ -140,7 +139,7 @@ class MCState:
         sig_by_cutoff3 = np.power(1.0 / self.cutoff, 3)
         sig_by_cutoff9 = np.power(sig_by_cutoff3, 3)
         e_correction = sig_by_cutoff9 - 3.0 * sig_by_cutoff3
-        e_correction *= 8.0 / 9.0 * np.pi * self.number_particles / volume * self.number_particles
+        e_correction *= 8.0 / 9.0 * np.pi * self.box.number_particles / volume * self.box.number_particles
 
         self.tail_correction = e_correction
     
@@ -173,7 +172,7 @@ class MCState:
         i_position = calculate_coordinates[i_particle]
 
         cutoff2 = self.cutoff ** 2
-        particle_count = self.number_particles
+        particle_count = self.box.number_particles
 
         for j_particle in range(particle_count):
             if i_particle != j_particle:
@@ -188,7 +187,7 @@ class MCState:
         return e_total
 
     
-def generate_initial_coordinates(method='random', **kwargs):
+def generate_initial_coordinates(method, **kwargs):
     """
     Generate initial coordinates for MC system.
 
@@ -196,12 +195,6 @@ def generate_initial_coordinates(method='random', **kwargs):
     ----------
     method : str
         Method for creating initial configuration. Valid options are 'random' or 'file'. 'random' will place particles in the simulation box randomly, depending on the num_particles argument, while 'file' will read coordinates from an xyz file.
-    fname : str
-        File path of file to read coordinates from (for `method='file'`).
-    num_particles : int
-        Number of particles to place in box (for `method='random'`)
-    box_length : float
-        Length of the simulation box (for `method='file'`)
 
     Returns
     -------
@@ -209,9 +202,7 @@ def generate_initial_coordinates(method='random', **kwargs):
         Array of coordinates (x, y, z)
     """
     
-    #coord_method = get_method(method)
     coord_method = get_method(method)
-
     return coord_method(**kwargs)
 
 def get_method(method):
@@ -230,12 +221,15 @@ def _random(num_particles, box_length):
     # Randomly placing particles in a box
     coordinates = (0.5 - np.random.rand(num_particles, 3)) * box_length
     
-    return coordinates
+    return coordinates, box_length
 
 def _from_file(fname):
     try:
         # Reading a reference configuration from NIST
         coordinates = np.loadtxt(fname, skiprows=2, usecols=(1,2,3))
+        with open(file_name) as f:
+            f.readline()
+            box_length = float(f.readline().split()[0])
     except ValueError:
         if fname is None:
             raise ValueError("generate_initial_coordinates: Method set to 'file', but no filepath given. Please specify an input file")
@@ -247,7 +241,7 @@ def _from_file(fname):
         print(e)
         raise
     
-    return coordinates
+    return coordinates, box_length
 
 # Lennard Jones potential implementation
 
@@ -370,16 +364,13 @@ if __name__ == "__main__":
     # Method = file
 
     file_name = os.path.join('..','nist_sample_config1.txt')
-    coordinates = generate_initial_coordinates(method=method, fname=file_name)
-    num_particles = len(coordinates)
-    with open(file_name) as f:
-        f.readline()
-        box_length = float(f.readline().split()[0])
+    coordinates, box_length = generate_initial_coordinates(method=method, fname=file_name)
 
     # Initialized objects
-    box = Box(box_length = box_length)
-    mc_system = MCState(box=box, cutoff=simulation_cutoff, max_displacement=max_displacement, reduced_temperature=reduced_temperature, coordinates=coordinates)
-    
+    box = Box(box_length=box_length, particles=coordinates)
+    mc_system = MCState(box=box, cutoff=simulation_cutoff, max_displacement=max_displacement, reduced_temperature=reduced_temperature)
+    num_particles = mc_system.box.number_particles
+
     n_trials = 0
     n_accept = 0
     energy_array = np.zeros(n_steps)
@@ -417,14 +408,14 @@ if __name__ == "__main__":
             n_accept += 1
             mc_system.coordinates[i_particle] += random_displacement
 
-        total_energy = (mc_system.total_pair_energy + mc_system.tail_correction) / mc_system.number_particles
+        total_energy = (mc_system.total_pair_energy + mc_system.tail_correction) / mc_system.box.number_particles
 
         energy_array[i_step] = total_energy
 
         if np.mod(i_step + 1, freq) == 0:
             # Update output file
             traj.write(str(num_particles) + '\n\n')
-            for i_particle in range(mc_system.number_particles):
+            for i_particle in range(mc_system.box.number_particles):
                 traj.write("%s %10.5f %10.5f %10.5f \n" % (element, mc_system.coordinates[i_particle][0], mc_system.coordinates[i_particle][1], mc_system.coordinates[i_particle][2]))
             
             # Adjust displacement
