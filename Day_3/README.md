@@ -15,9 +15,10 @@ We do not have a particle class. Since the only attribute of a particle we care 
 
 1. The Box class.
     The Box class is initialized with a box length. A set of particle coordinates as a numpy array is an optional input. The default argument for `particles` is `None`. Meaning that you can have a box without particles. 
-    -  box dimensions
-        *  box_length
-        *  particles - `None` or a numpy array of particle coordinates
+
+    The Box class has the following attributes.
+    -  box dimensions (ie the `box_length`)
+    - particles - `None` or a numpy array of particle coordinates
 
     The Box class has the following methods.
     - wrap  
@@ -40,12 +41,20 @@ We do not have a particle class. Since the only attribute of a particle we care 
     - cutoff - the simulation cut off
     - max_displacement - the maximum displacement for a Monte Carlo move.
     - beta (1 / reduced_temperature)
+    - total_pair_energy
+    - tail_correction
+    - total_energy
     
     The MCState class has the following methods.
     - calculate_total_pair_energy
+        - **returns** the total pair energy 
     - calculate_tail_correction
+        - **returns** the tail correction
     - calculate_total_energy
+        - **returns** the total energy based on calculation using `calculate_total_pair_energy` and `calculate_tail_correction`.
     - get_particle_energy
+        - takes a particle index as an argument. Optional arugment of particle_movement (this is a vector describing out to move the specified particle).
+        - **returns** the pairwise interaction energy of a with all other particles.
 
 1. The following functions are not associated with classes.
     - lennard_jones_potential
