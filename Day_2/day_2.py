@@ -99,7 +99,7 @@ def minimum_image_distance(r_i, r_j, box_length):
 
 # Computation of the total system energy
 
-def total_potential_energy(coordinates, box_length, cutoff):
+def total_pair_energy(coordinates, box_length, cutoff):
     """
     Calculate the total potential energy of the system using a pairwise Lennard Jones potential.
 
@@ -160,7 +160,7 @@ def tail_correction(box_length, cutoff, number_particles):
 
     return e_correction
 
-def get_molecule_energy(coordinates, i_particle, cutoff):
+def get_particle_energy(coordinates, i_particle, cutoff):
     """
     Calculate the interaction energy of a particle with its environment (all other particles in the system)
 
@@ -198,44 +198,6 @@ def get_molecule_energy(coordinates, i_particle, cutoff):
     return e_total
 
 
-def propose_move(num_particles, max_displacement, coordinates, cutoff):
-    """
-    Moves a random particle in `coordinates` array by a random distance within the specified max displacement.
-
-    Parameters
-    ----------
-    num_particles : int
-        The number of particles in the simlation.
-    max_displacement : float
-        The maximum distance a particle should move during a trial.
-    coordinates: numpy array
-        Coordinates for all particles in the simulation.
-    cutoff : float  
-        The simulation cutoff. Beyond this distance, interactions are not calculated.
-    
-    Returns
-    -------
-    new_energy - old_energy : float
-        The energy difference for the particle move
-    i_particle : int
-        Index of the random particle which was moved
-    random_displacement : numpy.array
-        The random displacement
-    """
-
-    i_particle = np.random.randint(num_particles)
-    random_displacement = (2.0 * np.random.rand(3) - 1.0)* max_displacement
-    
-    # old_position = coordinates[i_particle].copy()
-    old_energy = get_molecule_energy(coordinates, i_particle, cutoff)
-    
-    # Make a copy before adding random displacement
-    new_coordinates = coordinates.copy()
-    new_coordinates[i_particle] += random_displacement
-    new_energy = get_molecule_energy(new_coordinates, i_particle, cutoff)
-
-    return new_energy - old_energy, i_particle, random_displacement
-
 def accept_or_reject(delta_e, beta):
     """
     Calculate if move is accepted or rejected based on the energy change, simulation temperature (beta), and (possibly) a random number.
@@ -265,28 +227,6 @@ def accept_or_reject(delta_e, beta):
             accept = False
 
     return accept
-
-def restore_system(coordinates, i_particle, old_position):
-    """
-    Return coordinates to previous value.
-
-    Parameters
-    ----------
-    coordinates : numpy array
-        The coordinates for all particles in a system
-    i_particle : int
-        The index of particle i which coordinates are to be restored for
-    old_position : float
-
-    Returns
-    -------
-    coordinates : numpy array
-        The updated system coordinates.
-    """
-
-    coordinates[i_particle] = old_position
-
-    return coordinates
 
 def adjust_displacement(freq, i_step, n_trials, n_accept, max_displacement):
     """
@@ -390,7 +330,7 @@ if __name__ == "__main__":
     n_accept = 0
     energy_array = np.zeros(n_steps)
 
-    total_pair_energy = total_potential_energy(coordinates, box_length, simulation_cutoff)
+    total_pair_energy = total_pair_energy(coordinates, box_length, simulation_cutoff)
     tail_correction = tail_correction(box_length, simulation_cutoff, num_particles)
     print(total_pair_energy)
 
@@ -404,17 +344,27 @@ if __name__ == "__main__":
 
         n_trials += 1
 
-        delta_e, i_particle, random_movement = propose_move(num_particles, max_displacement, coordinates, simulation_cutoff)
+        # ---------------------------
+        #  Propose a Monte Carlo Move
+        # ---------------------------
+        i_particle = np.random.randint(num_particles)
+        random_displacement = (2.0 * np.random.rand(3) - 1.0)* max_displacement
+    
+        current_energy = get_particle_energy(coordinates, i_particle, simulation_cutoff)
+        
+        # Make a copy before adding random displacement
+        proposed_coordinates = coordinates.copy()
+        proposed_coordinates[i_particle] += random_displacement
+        proposed_energy = get_particle_energy(proposed_coordinates, i_particle, simulation_cutoff)
 
+        delta_e = proposed_energy - current_energy
+        
         accept = accept_or_reject(delta_e, beta)
 
         if accept:
             total_pair_energy += delta_e
             n_accept += 1
-            coordinates[i_particle] += random_movement
-        else:
-            pass
-            
+            coordinates[i_particle] += random_displacement
 
         if tune_displacement:
             max_displacement = adjust_displacement(freq, i_step, n_trials, n_accept, max_displacement)
@@ -423,9 +373,13 @@ if __name__ == "__main__":
 
         energy_array[i_step] = total_energy
 
-        update_output_file(traj, i_step, freq, element, num_particles, coordinates)
-
-        if np.mod(i_step + 1, 1000) == 0:
+        if np.mod(i_step + 1, freq) == 0:
+            # Update output file
+            traj.write(str(num_particles) + '\n\n')
+            for i_particle in range(num_particles):
+                traj.write("%s %10.5f %10.5f %10.5f \n" % (element, coordinates[i_particle][0], coordinates[i_particle][1], coordinates[i_particle][2]))
+            
+            # Print info
             print (i_step + 1, energy_array[i_step])
 
     traj.close()
