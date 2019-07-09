@@ -16,7 +16,7 @@ def nist_file():
     return coordinates, nist_file
 
 @pytest.fixture
-def test_box(nist_file):
+def mc_box(nist_file):
     coordinates = nist_file[0][0]
     box_length = nist_file[0][1]
     fname = nist_file[1]
@@ -102,9 +102,8 @@ def test_minimum_image_distance(ri, rj, box_length, expected_distance):
     (3, -4.3515E+03),
     (4, -4.4675E+03)
 ])
-def test_total_pair_energy(test_box, cutoff, nist_energy):
-    test_state = mc.MCState(test_box, cutoff, max_displacement=0.1, reduced_temperature=0.9)
-
+def test_total_pair_energy(mc_box, cutoff, nist_energy):
+    test_state = mc.MCState(mc_box, cutoff=cutoff, max_displacement=0.1, reduced_temperature=0.9)
     test_state.calculate_total_pair_energy()
 
     calculated_energy = test_state.total_pair_energy
@@ -116,8 +115,9 @@ def test_total_pair_energy(test_box, cutoff, nist_energy):
     (4, -8.3769E+01),
 ]
 )
-def test_tail_correction(cutoff, nist_reference):
-    correction = mc.tail_correction(10, cutoff, 800)
+def test_tail_correction(mc_box, cutoff, nist_reference):
+    state = mc.MCState(mc_box, cutoff=cutoff, max_displacement=0.1, reduced_temperature=0.9)
+    correction = state.calculate_tail_correction()
     # Compare to reference from NIST
     assert np.isclose(correction, nist_reference)
 
