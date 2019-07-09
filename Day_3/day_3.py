@@ -7,16 +7,14 @@ class Box:
     def __init__(self, box_length, particles=None):
         self.box_length = box_length
         self.particles = particles # if None, no particles in MCSystem
-        
-        # Calculated quantities
-        self.calculate_number_particles()
     
-    def calculate_number_particles(self):
+    @property
+    def number_particles(self):
         """Calculate the number of particles"""
         if self.particles is None:
-            self.number_particles = 0
+            return 0
         else:
-            self.number_particles = len(self.particles)
+            return len(self.particles)
     
     def minimum_image_distance(self, r_i, r_j):
         """
@@ -47,32 +45,10 @@ class Box:
         """Calculate the volume of the box based on the box length"""
         return self.box_length ** 3
     
-    def wrap(self, r_i):
+    def wrap(self):
         """Wrap points which are outside of box into box"""
         # TODO
         pass
-    
-class TriclinicBox(Box):
-    def __init__(self, box_length, tilt_factors):
-        """
-        Create a triclinic box
-        """
-        super().__init__(box_length)
-        self.tilt_factors = tilt_factors
-        self.calculate_box_angles()
-    
-    def calculate_box_angles(self):
-        # TODO - implement this
-        self.box_angles = self.tilt_factors
-        pass
-
-    @property
-    def volume(self):
-        term1 = self.box_length ** 3
-        term1 *= 1 - math.cos(self.box_angles[0]) ** 2 - math.cos(self.box_angles[1]) ** 2 - math.cos(self.box_angles[2]) ** 2
-        term2 = 2 * math.sqrt(math.cos(self.box_angles[0])*math.cos(self.box_angles[1])*math.cos(self.box_angles[2]))
-        return term1 + term2
-
 
 class MCState:
     def __init__(self, box, cutoff, max_displacement, reduced_temperature):
@@ -80,7 +56,6 @@ class MCState:
         self.cutoff = cutoff
         self.beta = 1 / reduced_temperature
         self.max_displacement = max_displacement
-        self.coordinates = box.particles
         
         self.calculate_total_energy()
             
@@ -107,8 +82,8 @@ class MCState:
 
         for i_particle in range(particle_count):
             for j_particle in range(i_particle):
-                r_i = self.coordinates[i_particle]
-                r_j = self.coordinates[j_particle]
+                r_i = self.box.particles[i_particle]
+                r_j = self.box.particles[j_particle]
                 rij2 = self.box.minimum_image_distance(r_i, r_j)
                 if rij2 < cutoff2:
                     e_pair = lennard_jones_potential(rij2)
@@ -163,7 +138,7 @@ class MCState:
             The pairwise interaction energy of he i_th particle with all other particles in the system.
         """
 
-        calculate_coordinates = self.coordinates.copy()
+        calculate_coordinates = self.box.particles.copy()
 
         if particle_movement is not None:
             calculate_coordinates[i_particle] += particle_movement
@@ -202,16 +177,14 @@ def generate_initial_coordinates(method, **kwargs):
         Array of coordinates (x, y, z)
     """
     
-    coord_method = get_method(method)
-    return coord_method(**kwargs)
-
-def get_method(method):
     if method == "random":
-        return _random
+        coord_method = _random
     elif method == "file":
-        return _from_file
+        coord_method = _from_file
     else:
         raise ValueError("Method not found.")
+    
+    return coord_method(**kwargs)
 
 def _random(num_particles, box_length):
     if num_particles is None:
@@ -227,7 +200,7 @@ def _from_file(fname):
     try:
         # Reading a reference configuration from NIST
         coordinates = np.loadtxt(fname, skiprows=2, usecols=(1,2,3))
-        with open(file_name) as f:
+        with open(fname) as f:
             f.readline()
             box_length = float(f.readline().split()[0])
     except ValueError:
@@ -406,7 +379,7 @@ if __name__ == "__main__":
         if accept:
             mc_system.total_pair_energy += delta_e
             n_accept += 1
-            mc_system.coordinates[i_particle] += random_displacement
+            mc_system.box.particles[i_particle] += random_displacement
 
         total_energy = (mc_system.total_pair_energy + mc_system.tail_correction) / mc_system.box.number_particles
 
@@ -416,7 +389,8 @@ if __name__ == "__main__":
             # Update output file
             traj.write(str(num_particles) + '\n\n')
             for i_particle in range(mc_system.box.number_particles):
-                traj.write("%s %10.5f %10.5f %10.5f \n" % (element, mc_system.coordinates[i_particle][0], mc_system.coordinates[i_particle][1], mc_system.coordinates[i_particle][2]))
+                particle = mc_system.box.particles[i_particle]
+                traj.write("%s %10.5f %10.5f %10.5f \n" % (element, particle[0], particle[1], particle[2]))
             
             # Adjust displacement
             if tune_displacement:
