@@ -20,8 +20,8 @@ We do not have a particle class. Since the only attribute of a particle we care 
         *  particles - `None` or a numpy array of particle coordinates
 
     The Box class has the following methods.
-    - wrap
-        Place particles which are outside of box into box based on periodic boundaries.
+    - wrap  
+        - Place particles which are outside of box into box based on periodic boundaries.
     - minimum_image_distance
         - arguments are two points. Calculate the distance between these two points based on periodic boundaries.
     - volume
@@ -69,7 +69,7 @@ We do not have a particle class. Since the only attribute of a particle we care 
         return coordinates, nist_file
     ~~~
 
-    You can also write a fixture to create a box. You can build this from the nist file fixture by passing the `nist_file` fixture as an argument to the new function. For example, our code looks like this.
+    You can also write a fixture to create a box. You can build this from the nist file fixture by passing the `nist_file` fixture as an argument to the new function. For example, our code looks like this. 
     
     ~~~
     @pytest.fixture
