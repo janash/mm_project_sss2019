@@ -57,7 +57,10 @@ class MCState:
         self.beta = 1 / reduced_temperature
         self.max_displacement = max_displacement
         
-        self.calculate_total_energy()
+        self.total_pair_energy = self.calculate_total_pair_energy()
+        self.tail_correction = self.calculate_tail_correction()
+
+        self.total_energy = self.total_pair_energy + self.tail_correction
             
     def calculate_total_pair_energy(self):
         """
@@ -89,7 +92,7 @@ class MCState:
                     e_pair = lennard_jones_potential(rij2)
                     e_total += e_pair
 
-        self.total_pair_energy = e_total
+        return e_total
     
     def calculate_tail_correction(self):
         """
@@ -116,12 +119,12 @@ class MCState:
         e_correction = sig_by_cutoff9 - 3.0 * sig_by_cutoff3
         e_correction *= 8.0 / 9.0 * np.pi * self.box.number_particles / volume * self.box.number_particles
 
-        self.tail_correction = e_correction
+        return e_correction
     
     def calculate_total_energy(self):
-        self.calculate_tail_correction()
-        self.calculate_total_pair_energy()
-        self.total_energy = self.total_pair_energy + self.tail_correction
+        tail_correction = self.calculate_tail_correction()
+        pair_energy = self.calculate_total_pair_energy()
+        return tail_correction + pair_energy
     
     def get_particle_energy(self, i_particle, particle_movement=None):
         """
@@ -348,7 +351,7 @@ if __name__ == "__main__":
     n_accept = 0
     energy_array = np.zeros(n_steps)
 
-    mc_system.calculate_total_energy()
+    total_pair_energy = mc_system.calculate_total_energy()
     print(mc_system.total_pair_energy)
 
     traj = open('traj.xyz', 'w') 
