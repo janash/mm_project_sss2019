@@ -2,8 +2,6 @@ This is the sample code for Day 2 of the software summer school MM project.
 
 Day 2 covers
 - PEP 8
-    - make point that all languages have recommended style and formatting.
-    - C++ style and formatting - how will this be covered?
 - Numpy style docstrings
 - Error and Exception handling
 - testing using pytest
