@@ -1,0 +1,19 @@
+name: test
+channels:
+dependencies:
+    # Base depends
+  - python
+  - pip
+
+    # Testing
+  - pytest
+  - pytest-cov
+  - codecov
+
+    # Other depends
+  - numpy
+
+    # Pip-only installs
+  #- pip:
+  #  - codecov
+
