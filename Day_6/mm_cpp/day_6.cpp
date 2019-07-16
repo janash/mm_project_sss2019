@@ -20,7 +20,7 @@ Vector3d round_vector(Vector3d v)
 
 double minimum_image_distance(Vector3d r_i, Vector3d r_j, double box_length)
 {
-    Eigen::Vector3d rij = r_i - r_j;
+    Vector3d rij = r_i - r_j;
 
     // In python, this is: self.box_length * np.round(rij / self.box_length)
     Vector3d shift = rij / box_length;
