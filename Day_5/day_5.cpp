@@ -14,7 +14,7 @@ using Eigen::Vector3d;
 
 /*! \brief Round all elements of a vector to integers
  *
- * The return type is still contains doubles, however
+ * The return type still contains doubles, however
  * it should contain integer values.
  */
 Vector3d round_vector(Vector3d v)
@@ -36,7 +36,7 @@ Vector3d round_vector(Vector3d v)
  */
 double minimum_image_distance(Vector3d r_i, Vector3d r_j, double box_length)
 {
-    Eigen::Vector3d rij = r_i - r_j;
+    Vector3d rij = r_i - r_j;
 
     // In python, this is: self.box_length * np.round(rij / self.box_length)
     Vector3d shift = rij / box_length;
@@ -57,7 +57,7 @@ double minimum_image_distance(Vector3d r_i, Vector3d r_j, double box_length)
  */
 double lennard_jones_potential(double rij2)
 {
-    double sig_by_r6 = pow(1 / rij2, 3);
+    double sig_by_r6 = pow(1.0 / rij2, 3);
     double sig_by_r12 = sig_by_r6 * sig_by_r6;
     return 4.0 * (sig_by_r12 - sig_by_r6);
 }
