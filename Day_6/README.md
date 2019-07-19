@@ -1,11 +1,13 @@
 # Introduction to C++
 
-By the end of Day 6, the students will learn how to accelerate their python MM/QM code by re-writing the most (computationally) intensive functions in C++ and binding them to python via pybind11.
+By the end of Day 6, the students will learn how to accelerate their python MM/QM code by re-writing the most (computationally) intensive functions in C++ and binding them to python via pybind11. The students will apply knowledge they acquired from the previous 4 days to:
 
-- How to install CMake and pybind11 with conda
-- The basics of CMake: how to compile a program/library
-- How to profile python programs with cProfile and identify bottlenecks
-- How to bind C++11 functions with python using pybind11
+- Install CMake and pybind11 with conda
+- Compile a C++ program/library with CMake
+- Profile python programs with cProfile and identify bottlenecks
+- Bind C++11 functions with python using pybind11
+
+The main objective is to show students how python can be slow for certain type of computations and how it can accelerated by extending the code base with a compiled, fast language such as C++.
 
 ## Code refactor
 At the end of the day, the students will be asked to re-write certain functions in their MM/QM code in C++11 and profile the new code. 
