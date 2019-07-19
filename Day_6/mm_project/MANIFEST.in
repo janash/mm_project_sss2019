@@ -4,3 +4,4 @@ include versioneer.py
 
 graft mm_project
 global-exclude *.py[cod] __pycache__ *.so
+recursive-include mm_cpp *.hpp
