@@ -6,6 +6,7 @@ By the end of Day 6, the students will learn how to accelerate their python MM/Q
 - Compile a C++ program/library with *CMake*
 - Profile python programs with *cProfile* and identify bottlenecks
 - Bind C++11 functions with python using *pybind11*
+- Create a pip-installable python package with C++ extensions
 
 The main objective is to show students how python can be slow for certain type of computations and how it can accelerated by extending the code base with a compiled, fast language such as C++.
 

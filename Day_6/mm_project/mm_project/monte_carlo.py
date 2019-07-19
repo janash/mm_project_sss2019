@@ -1,55 +1,17 @@
-import os
+"""
+monte_carlo.py
+A package for doing MC of a Lennard Jones fluid
+
+Handles the primary functions
+"""
+
 import numpy as np
-import mm_cpp
+import os
 
-import math
+from mm_project.coordinates import generate_initial_coordinates, Box
+from mm_project.potential import lennard_jones_potential
 
-class Box:
-    def __init__(self, box_length, particles=None):
-        self.box_length = box_length
-        self.particles = particles # if None, no particles in MCSystem
-    
-    @property
-    def number_particles(self):
-        """Calculate the number of particles"""
-        if self.particles is None:
-            return 0
-        else:
-            return len(self.particles)
-    
-    def minimum_image_distance(self, r_i, r_j):
-        """
-        Calculate the distance between two points using the minimum image convention.
-
-        The minimum image convention is for calculating distances in boxes with periodic boundary conditions.
-
-        Parameters
-        ----------
-        r_i : numpy array
-            The coordinates of first point np.array(x,y,z) 
-        r_j : numpy array
-            The coordinates of second point np.array(x,y,z)
-        
-        Returns
-        -------
-        rij2 : float
-            The square distance between two particles.
-        """
-
-        rij = r_i - r_j
-        rij = rij - self.box_length * np.round(rij / self.box_length)
-        rij2 = np.dot(rij, rij)
-        return rij2
-    
-    @property
-    def volume(self):
-        """Calculate the volume of the box based on the box length"""
-        return self.box_length ** 3
-    
-    def wrap(self):
-        """Wrap points which are outside of box into box"""
-        # TODO
-        pass
+from mm_project import mm_cpp
 
 class MCState:
     def __init__(self, box, cutoff, max_displacement, reduced_temperature):
@@ -80,6 +42,7 @@ class MCState:
             The total pairwise potential energy of the system.
         """
 
+        # Call the fast c++ implementation
         e_total = mm_cpp.calculate_total_pair_energy(self.box.box_length, self.box.particles, self.cutoff)
         return e_total
 
@@ -137,85 +100,8 @@ class MCState:
         if particle_movement is None:
             particle_movement = np.array([0,0,0])
 
-        return mm_cpp.get_particle_energy(i_particle, self.box.box_length, self.box.particles, self.cutoff, particle_movement)
-
-    
-def generate_initial_coordinates(method, **kwargs):
-    """
-    Generate initial coordinates for MC system.
-
-    Parameters
-    ----------
-    method : str
-        Method for creating initial configuration. Valid options are 'random' or 'file'. 'random' will place particles in the simulation box randomly, depending on the num_particles argument, while 'file' will read coordinates from an xyz file.
-
-    Returns
-    -------
-    coordinates : numpy array
-        Array of coordinates (x, y, z)
-    """
-    
-    if method == "random":
-        coord_method = _random
-    elif method == "file":
-        coord_method = _from_file
-    else:
-        raise ValueError("Method not found.")
-    
-    return coord_method(**kwargs)
-
-def _random(num_particles, box_length):
-    if num_particles is None:
-        raise ValueError('generate_initial_coordinates - "random" particle placement chosen, please input the number of particles using the num_particles argument.')
-    if box_length is None:
-        raise ValueError('generate_initial_coordinates - "random" particle placement chosen, please input the box length using the box_length argument.')
-    # Randomly placing particles in a box
-    coordinates = (0.5 - np.random.rand(num_particles, 3)) * box_length
-    
-    return coordinates, box_length
-
-def _from_file(fname):
-    try:
-        # Reading a reference configuration from NIST
-        coordinates = np.loadtxt(fname, skiprows=2, usecols=(1,2,3))
-        with open(fname) as f:
-            f.readline()
-            box_length = float(f.readline().split()[0])
-    except ValueError:
-        if fname is None:
-            raise ValueError("generate_initial_coordinates: Method set to 'file', but no filepath given. Please specify an input file")
-        else:
-            raise ValueError
-    except OSError:
-        raise OSError(F'File {fname} not found.')
-    except Exception as e:
-        print(e)
-        raise
-    
-    return coordinates, box_length
-
-# Lennard Jones potential implementation
-
-def lennard_jones_potential(rij2):
-    """
-    Calculate the Lennard Jones pairwise potential between two particles based on a separation distance.
-    
-    Parameters
-    ----------
-    rij2 : float
-        The squared distance between two particles.
-    
-    Returns
-    -------
-    float
-        The Lennard Jones interaction energy for two particles.
-    """
-
-    sig_by_r6 = np.power(1 / rij2, 3)
-    sig_by_r12 = np.power(sig_by_r6, 2)
-    return 4.0 * (sig_by_r12 - sig_by_r6)
-
-# Computation of the energy tail correction
+        e_total = mm_cpp.get_particle_energy(i_particle, self.box.box_length, self.box.particles, self.cutoff, particle_movement)
+        return e_total
 
 def accept_or_reject(delta_e, beta):
     """
@@ -248,7 +134,7 @@ def accept_or_reject(delta_e, beta):
     return accept
 
 
-def adjust_displacement(n_trials, n_accept, max_displacement):
+def _adjust_displacement(n_trials, n_accept, max_displacement):
     """
     Adjust the max displacement to achieve ideal acceptance rate.
 
@@ -281,21 +167,14 @@ def adjust_displacement(n_trials, n_accept, max_displacement):
     return max_displacement
 
 
-
-if __name__ == "__main__":
-        
+def run(method, box_length=None, num_particles=None, file_name=None, reduced_temperature=0.9, simulation_cutoff=3.0, max_displacement=0.1, n_steps=5000, freq=1000, tune_displacement=True, output_trajectory='traj.xyz'):
+    """
+    Run Monte Carlo Simulation
+    """
     # ---------------
     # Parameter setup
     # ---------------
 
-    reduced_temperature = 0.9
-    max_displacement = 0.1
-    n_steps = 50000
-    freq = 1000
-    tune_displacement = True
-    simulation_cutoff = 3.0
-    
-    simulation_cutoff2 = np.power(simulation_cutoff, 2)
     beta = 1 / reduced_temperature
 
     # -------------------------
@@ -303,19 +182,9 @@ if __name__ == "__main__":
     # -------------------------
 
     # Coordinate initialization
-    method = 'file'
     element = 'C'
 
-    # Method = random
-    # reduced_density = 0.9
-    # num_particles = 100
-    # box_length = np.cbrt(num_particles / reduced_density)
-    # coordinates = generate_initial_coordinates(method=method, num_particles=num_particles, box_length=box_length)
-
-    # Method = file
-
-    file_name = os.path.join('..','nist_sample_config1.txt')
-    coordinates, box_length = generate_initial_coordinates(method=method, fname=file_name)
+    coordinates, box_length = generate_initial_coordinates(method=method, box_length=box_length, num_particles=num_particles, fname=file_name)
 
     # Initialized objects
     box = Box(box_length=box_length, particles=coordinates)
@@ -329,7 +198,7 @@ if __name__ == "__main__":
     total_pair_energy = mc_system.calculate_total_energy()
     print(mc_system.total_pair_energy)
 
-    traj = open('traj.xyz', 'w') 
+    traj = open(output_trajectory, 'w') 
 
     # --------------------------------
     # Metropolis Monte Carlo algorithm
@@ -372,9 +241,16 @@ if __name__ == "__main__":
             
             # Adjust displacement
             if tune_displacement:
-                mc_system.max_displacement = adjust_displacement(n_trials, n_accept, mc_system.max_displacement)
+                mc_system.max_displacement = _adjust_displacement(n_trials, n_accept, mc_system.max_displacement)
 
             # Print info
             print (i_step + 1, energy_array[i_step])
 
     traj.close()
+
+if __name__ == "__main__":
+    # Do something if this file is invoked on its own
+    current_directory = os.path.dirname(os.path.abspath(__file__))
+    nist_file = os.path.join(current_directory, 'data', 'nist_sample_config1.txt')
+
+    run(method="file", file_name=nist_file)
