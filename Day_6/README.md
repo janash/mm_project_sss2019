@@ -23,7 +23,7 @@ Students will 1st use cProfile to identify time-consuming functions in their pyt
 
 ### QM code
 - `calculate_energy_mp2`
-- `calculate_fock_matrix`: scales as $O(N^4)$ 
-- `calculate_fock_matrix_fast`: scales as $O(N^2)$ but is much slower in python than `calculate_fock_matrix`
+- `calculate_fock_matrix`: scales as O(N^4) 
+- `calculate_fock_matrix_fast`: scales as O(N^2) but is much slower in python than `calculate_fock_matrix`
 
-Students should observe that the C++ implementation of `calculate_fock_matrix_fast` is much more efficient than its python equivalent, and this leads to faster execution w.r.t `calculate_fock_matrix` in python.
+Students should observe that the C++ implementation of `calculate_fock_matrix_fast` is much more efficient than its python equivalent, and this leads to faster execution w.r.t `calculate_fock_matrix` in python when the number of particles is above 50 [?].
