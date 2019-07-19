@@ -4,6 +4,7 @@ A package for doing MC of a Lennard Jones fluid
 """
 import os
 import sys
+import platform
 from setuptools import setup, find_packages, Extension
 import versioneer
 
@@ -25,8 +26,16 @@ except:
 #       so we need to add that to the include paths
 conda_prefix = os.environ['CONDA_PREFIX']
 eigen_path = os.path.join(conda_prefix, 'include', 'eigen3')
+
+# MacOSX causes some problems. This is due to a recent
+# deprecation of the stdc++ library
+
+if sys.platform == 'darwin':
+    os.environ['MACOSX_DEPLOYMENT_TARGET'] = platform.mac_ver()[0]
+
 qm_cpp_module = Extension('mm_project.mm_cpp',
                           include_dirs = [eigen_path],
+                          extra_compile_args = ['-std=c++11'],
                           sources = ['mm_cpp/day_6.cpp',
                                      'mm_cpp/export.cpp'])
 
