@@ -33,7 +33,7 @@ eigen_path = os.path.join(conda_prefix, 'include', 'eigen3')
 if sys.platform == 'darwin':
     os.environ['MACOSX_DEPLOYMENT_TARGET'] = platform.mac_ver()[0]
 
-qm_cpp_module = Extension('mm_project.mm_cpp',
+mm_cpp_module = Extension('mm_project.mm_cpp',
                           include_dirs = [eigen_path],
                           extra_compile_args = ['-std=c++11'],
                           sources = ['mm_cpp/day_6.cpp',
@@ -66,7 +66,7 @@ setup(
     setup_requires=[] + pytest_runner,
 
     # Include the compiled extension
-    ext_modules = [qm_cpp_module]
+    ext_modules = [mm_cpp_module]
 
     # Additional entries you may want simply uncomment the lines you want and fill in the data
     # url='http://www.my_package.com',  # Website
