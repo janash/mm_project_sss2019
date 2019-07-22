@@ -1,7 +1,7 @@
 import os
 import numpy as np
-#import matplotlib.pyplot as plt
-#from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 #%matplotlib notebook
 
 # Generate initial state
@@ -114,7 +114,7 @@ if __name__ == "__main__":
 
     reduced_temperature = 0.9
     max_displacement = 0.1
-    n_steps = 50000
+    n_steps = 500000
     freq = 1000
     tune_displacement = True
     simulation_cutoff = 3.0
@@ -152,7 +152,6 @@ if __name__ == "__main__":
 
     total_pair_energy = calculate_total_pair_energy(coordinates, box_length, simulation_cutoff2)
     tail_correction = calculate_tail_correction(box_length, simulation_cutoff, num_particles)
-    print(total_pair_energy)
 
     traj = open('traj.xyz', 'w') 
 
@@ -204,3 +203,14 @@ if __name__ == "__main__":
             print (i_step + 1, energy_array[i_step])
 
     traj.close()
+
+    #plt.plot(energy_array)
+    #plt.xlabel('Monte Carlo steps')
+    #plt.ylabel('Energy (reduced units)')
+    #plt.grid(True)
+    #plt.show()
+
+    #plt.figure()
+    #ax = plt.axes(projection='3d')
+    #ax.plot3D(coordinates[:,0], coordinates[:,1], coordinates[:,2], 'o')
+    #plt.show()
