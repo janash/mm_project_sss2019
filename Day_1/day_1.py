@@ -6,13 +6,13 @@ from mpl_toolkits.mplot3d import Axes3D
 
 # Generate initial state
 
-def generate_initial_coordinates(method='random', fname=None, num_particles=None, box_length=None):
+def generate_initial_coordinates(method='random', file_name=None, num_particles=None, box_length=None):
 
     if method is 'random':
         coordinates = (0.5 - np.random.rand(num_particles, 3)) * box_length
     
     elif method is 'file':
-        coordinates = np.loadtxt(fname, skiprows=2, usecols=(1,2,3))
+        coordinates = np.loadtxt(file_name, skiprows=2, usecols=(1,2,3))
     
     return coordinates
 
@@ -35,11 +35,10 @@ def minimum_image_distance(r_i, r_j, box_length):
 
 # Computation of the total system energy
 
-def total_pair_energy(coordinates, box_length, cutoff):
+def calculate_total_pair_energy(coordinates, box_length, cutoff2):
 
     e_total = 0.0
     particle_count = len(coordinates)
-    cutoff2 = cutoff ** 2
 
     for i_particle in range(particle_count):
         for j_particle in range(i_particle):
@@ -52,7 +51,7 @@ def total_pair_energy(coordinates, box_length, cutoff):
 
     return e_total
 
-def tail_correction(box_length, cutoff, number_particles):
+def calculate_tail_correction(box_length, cutoff, number_particles):
 
 
     volume = np.power(box_length, 3)
@@ -63,12 +62,11 @@ def tail_correction(box_length, cutoff, number_particles):
 
     return e_correction
 
-def get_particle_energy(coordinates, i_particle, cutoff):
+def get_particle_energy(coordinates, i_particle, cutoff2):
 
     e_total = 0.0
     i_position = coordinates[i_particle]
 
-    cutoff2 = cutoff ** 2
     particle_count = len(coordinates)
 
     for j_particle in range(particle_count):
@@ -116,44 +114,44 @@ if __name__ == "__main__":
 
     reduced_temperature = 0.9
     max_displacement = 0.1
-    n_steps = 50000
+    n_steps = 500000
     freq = 1000
     tune_displacement = True
     simulation_cutoff = 3.0
-
+    element = 'C'
     beta = 1 / reduced_temperature
+
+    # -------------------------
+    # Coordinate initialization
+    # -------------------------
+
+    # Method = random
+    build_method = 'random'
+    reduced_density = 0.9
+    num_particles = 100
+    box_length = np.cbrt(num_particles / reduced_density)
+    coordinates = generate_initial_coordinates(method=build_method, num_particles=num_particles, box_length=box_length)
 
     # -------------------------
     # Simulation initialization
     # -------------------------
 
-    # Coordinate initialization
-    method = 'file'
-    element = 'C'
-
-    # Method = random
-    # reduced_density = 0.9
-    # num_particles = 100
-    # box_length = np.cbrt(num_particles / reduced_density)
-    # coordinates = generate_initial_coordinates(method=method, num_particles=num_particles, box_length=box_length)
-
     # Method = file
-    file_name = os.path.join('..', 'nist_sample_config1.txt')
-    coordinates = generate_initial_coordinates(method=method, fname=file_name)
-    num_particles = len(coordinates)
-    with open(file_name) as f:
-        f.readline()
-        box_length = float(f.readline().split()[0])
+#    build_method = 'file'
+#    file_name = os.path.join('..', 'nist_sample_config1.txt')
+#    coordinates = generate_initial_coordinates(method=build_method, file_name=file_name)
+#    num_particles = len(coordinates)
+#    with open(file_name) as f:
+#        f.readline()
+#        box_length = float(f.readline().split()[0])
 
-    
     simulation_cutoff2 = np.power(simulation_cutoff, 2)
     n_trials = 0
     n_accept = 0
     energy_array = np.zeros(n_steps)
 
-    total_pair_energy = total_pair_energy(coordinates, box_length, simulation_cutoff)
-    tail_correction = tail_correction(box_length, simulation_cutoff, num_particles)
-    print(total_pair_energy)
+    total_pair_energy = calculate_total_pair_energy(coordinates, box_length, simulation_cutoff2)
+    tail_correction = calculate_tail_correction(box_length, simulation_cutoff, num_particles)
 
     traj = open('traj.xyz', 'w') 
 
@@ -171,12 +169,12 @@ if __name__ == "__main__":
         i_particle = np.random.randint(num_particles)
         random_displacement = (2.0 * np.random.rand(3) - 1.0)* max_displacement
     
-        current_energy = get_particle_energy(coordinates, i_particle, simulation_cutoff)
+        current_energy = get_particle_energy(coordinates, i_particle, simulation_cutoff2)
         
         # Make a copy before adding random displacement
         proposed_coordinates = coordinates.copy()
         proposed_coordinates[i_particle] += random_displacement
-        proposed_energy = get_particle_energy(proposed_coordinates, i_particle, simulation_cutoff)
+        proposed_energy = get_particle_energy(proposed_coordinates, i_particle, simulation_cutoff2)
 
         delta_e = proposed_energy - current_energy
         
@@ -186,8 +184,6 @@ if __name__ == "__main__":
             total_pair_energy += delta_e
             n_accept += 1
             coordinates[i_particle] += random_displacement
-
-        
 
         total_energy = (total_pair_energy + tail_correction) / num_particles
 
@@ -207,3 +203,14 @@ if __name__ == "__main__":
             print (i_step + 1, energy_array[i_step])
 
     traj.close()
+
+    #plt.plot(energy_array)
+    #plt.xlabel('Monte Carlo steps')
+    #plt.ylabel('Energy (reduced units)')
+    #plt.grid(True)
+    #plt.show()
+
+    #plt.figure()
+    #ax = plt.axes(projection='3d')
+    #ax.plot3D(coordinates[:,0], coordinates[:,1], coordinates[:,2], 'o')
+    #plt.show()
